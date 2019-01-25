@@ -8,7 +8,7 @@ CXX=$(CROSS)-g++
 AS=$(CROSS)-as
 GDB=$(CROSS)-gdb
 
-LDSFILE=lds/start.lds
+LDSFILE=lds/qemu.lds
 ASFLAGS=-march=rv32ima -mabi=ilp32 -O0 -g
 LDFLAGS=-T$(LDSFILE) -march=rv32ima -mabi=ilp32 -O0 -g -nostartfiles -nostdinc -ffreestanding -nostdlib -Ltarget/$(TARGET)/debug -L.
 OUT=$(NAME).elf
