@@ -1,13 +1,14 @@
 #![feature(lang_items, core_intrinsics)]
 #![no_std]
 #![feature(compiler_builtins_lib)]
-use core::intrinsics;
+//use core::intrinsics;
 use core::panic::PanicInfo;
 
 extern crate compiler_builtins;
 
 #[no_mangle]
 fn main() {
+    loop { }
 }
 
 // These functions are used by the compiler, but not
@@ -26,6 +27,7 @@ pub extern fn rust_eh_unwind_resume() {
 
 #[lang = "panic_impl"]
 #[no_mangle]
-pub extern fn rust_begin_panic(info: &PanicInfo) -> ! {
+pub extern fn rust_begin_panic(_info: &PanicInfo) -> ! {
+    //unsafe { intrinsics::abort() }
     loop { }
 }
