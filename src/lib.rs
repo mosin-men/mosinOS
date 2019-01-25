@@ -1,33 +1,26 @@
-#![feature(lang_items, core_intrinsics)]
+#![feature(panic_info_message,allocator_api,asm,lang_items,compiler_builtins_lib)]
+//We are not permitted to use the standard library since it isn't written for our operating system
 #![no_std]
-#![feature(compiler_builtins_lib)]
-//use core::intrinsics;
-use core::panic::PanicInfo;
 
-extern crate compiler_builtins;
+//The eh_personality tells our program how to unwind. We aren't going to write that, so tell
+//it to do nothing.
+#[lang = "eh_personality"]
+pub extern fn eh_personality() {}
+
+//Abort will be used when panic can't
+#[no_mangle]
+fn abort() -> !
+{
+   loop {}
+}
+
+//Panic handler will execute whenever our rust code panics. -> ! means that this function won't return,
+//so we have to make sure it doesn't.
+#[panic_handler]
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    abort()
+}
 
 #[no_mangle]
 fn main() {
-    loop { }
-}
-
-// These functions are used by the compiler, but not
-// for a bare-bones hello world. These are normally
-// provided by libstd.
-#[lang = "eh_personality"]
-#[no_mangle]
-pub extern fn rust_eh_personality() {
-}
-
-// This function may be needed based on the compilation target.
-#[lang = "eh_unwind_resume"]
-#[no_mangle]
-pub extern fn rust_eh_unwind_resume() {
-}
-
-#[lang = "panic_impl"]
-#[no_mangle]
-pub extern fn rust_begin_panic(_info: &PanicInfo) -> ! {
-    //unsafe { intrinsics::abort() }
-    loop { }
 }
