@@ -1,7 +1,7 @@
 [package]
 name = "mosin_os"
 version = "0.1.0"
-authors = ["Ben Olson <molson5@vols.utk.edu>"]
+authors = ["Ben Olson, Joe Teague, Chad Effler, Brandon Kammerdiener <{molson5, jteague6, teffler, bkammerd}@vols.utk.edu>"]
 edition = "2018"
 
 [profile.dev]
@@ -16,3 +16,7 @@ panic = "unwind"
 
 [lib]
 crate-type = ["staticlib"]
+
+[features]
+e31 = []
+qemu = []

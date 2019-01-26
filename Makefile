@@ -32,7 +32,7 @@ $(OUT): Makefile $(ASM_OBJECTS) $(RUST_OBJECT) $(LDSFILE)
 	$(CC) $(ASFLAGS) -c $< -o $@
 
 $(RUST_OBJECT): Makefile $(RUST_SOURCES)
-	$(XARGO) build --target=$(TARGET)
+	$(XARGO) build --features qemu --target=$(TARGET)
 
 qemu: $(OUT)
 	$(QEMU) $(QEMUARGS)
