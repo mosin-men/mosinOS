@@ -26,6 +26,15 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[no_mangle]
 fn main() {
+    let test_str = "This is a test of the UART system.";
     uart::UartDevice::configure();
-    loop {}
+
+    for c in test_str.chars() {
+        uart::UartDevice::uart_write(c);
+    }
+
+    let mut r: char;
+    loop {
+        let r = uart::UartDevice::uart_read();
+    }
 }
