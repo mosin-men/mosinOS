@@ -38,7 +38,7 @@ qemu: $(OUT)
 	$(QEMU) $(QEMUARGS)
 
 gdb: $(OUT)
-	$(QEMU) $(QEMUARGS) -S -s &
+	#$(QEMU) $(QEMUARGS) -S -s &
 	$(GDB) $(OUT) -ex "target remote localhost:1234"
 
 .PHONY: clean

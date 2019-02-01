@@ -63,9 +63,9 @@ impl UartDevice {
         /* Populate the memory for the divisor, the transmit control register,
            and the receive control register */
         unsafe {
-            *mem.offset(UartRegisters::DIV as isize) = UART_DIVISOR;
-            *mem.offset(UartRegisters::TXCTRL as isize) = txreg;
-            *mem.offset(UartRegisters::RXCTRL as isize) = rxreg;
+            mem.offset(UartRegisters::DIV as isize).write_volatile(UART_DIVISOR);
+            mem.offset(UartRegisters::TXCTRL as isize).write_volatile(txreg);
+            mem.offset(UartRegisters::RXCTRL as isize).write_volatile(rxreg);
         }
     }
 
@@ -82,9 +82,9 @@ impl UartDevice {
 
         /* Make sure we actually got something. If so, return it. Otherwise,
            return NOTHING */
-        match val & 1 {
+        match val & (1 << 31) {
             1   => 0 as char,
-            _   => (((val >> 24) & 0xFF) as u8) as char,
+            _   => (val as u8) as char
         }
     }
 
