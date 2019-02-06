@@ -1,0 +1,102 @@
+# cstr.bjou
+# null-terminated string utility procedures
+
+module cstr
+
+import "mem.bjou"
+import "compiler_support.bjou"
+using compiler_support
+
+proc cstrlen(s : char*) : u64 {
+    len := 0u64
+
+    while @s {
+        s   += 1
+        len += 1
+    }
+
+    return len
+}
+
+proc cstrcpy(dst : char*, src : char*) : char* {
+    len := cstrlen(src)
+
+    len += 1 # for NULL char
+
+    mem::mcopy(dst, src, len)
+
+    return dst
+}
+
+proc cstrcmp(s1 : char*, s2 : char*) : int {
+    while @s1
+    and   @s1 == @s2 {
+        s1 += 1
+        s2 += 1
+    }
+    return @(s1 as u8*) - @(s2 as u8*)
+}
+
+proc cstrcat(dst : char*, src : char*) : char* {
+    p := dst + cstrlen(dst)
+
+    while @p = @src {
+        p   += 1
+        src += 1
+    }
+
+    return dst
+}
+
+proc cstrrev(s : char*) {
+    s8  := s as u8*
+    end := s8 + cstrlen(s) - 1
+
+    while s8 < end {
+        @s8  = @s8  bxor @end
+        @end = @end bxor @s8
+        @s8  = @s8  bxor @end
+
+        s8  += 1
+        end -= 1
+    }
+}
+
+proc itoa(i : i32, a : char*) {
+    it     := 0
+    is_neg := false
+  
+    # Handle 0 explicitely, otherwise empty string is printed for 0
+    if i == 0 { 
+        a[0] = '0'
+        a[1] = '\0'
+        return
+    } 
+  
+    # In standard itoa(), negative numbers are handled only with  
+    # base 10. Otherwise numbers are considered unsigned. 
+    if i < 0 { 
+        is_neg = true
+        i      = 0 - i 
+    } 
+  
+    # Process individual digits 
+    while i { 
+        rem := i32mod(i, 10) 
+        a[it] = << if rem > 9    <-(rem - 10 + ('a' as u8))
+                   else          <-(rem      + ('0' as u8)) >> 
+        it += 1
+        i   = i32div(i, 10)
+    } 
+  
+    # If number is negative, append '-' 
+    if is_neg {
+        a[it] = '-' 
+        it += 1
+    }
+  
+    a[it] = '\0' # Append string terminator 
+  
+    # Reverse the string 
+    cstrrev(a)
+}

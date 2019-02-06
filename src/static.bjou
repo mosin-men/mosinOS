@@ -1,0 +1,36 @@
+# static.bjou
+# static storage utilities
+
+module static
+
+type Vec$T {
+    data : T*
+    cap  : u32
+    len  : u32
+
+    proc create(slice : T[]) : Vec$T {
+        return { Vec$T: .data = slice.data(), .cap = |slice| }
+    }
+
+    proc push(this, item : T) : i32 {
+        if this.len == this.cap    return -1
+        idx := this.len
+        this.data[idx] = item
+        this.len += 1
+        return idx
+    }
+    
+    proc pop(this) : i32 {
+        if this.len == 0    return -1
+        this.len -= 1
+        return this.len
+    }
+
+    proc clear(this) {
+        this.len = 0
+    }
+
+    proc get(this, idx : u32) : T ref {
+        return this.data[idx]
+    }
+}

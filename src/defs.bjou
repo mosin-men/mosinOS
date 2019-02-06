@@ -6,5 +6,4 @@ const QEMU := 0
 const E31 := 1
 const HIFIVE := 2
 const TARGET := QEMU
-const UART_TEST_STR := "UART Test
-"
+const CONSOLE_BUFF_SZ := 256

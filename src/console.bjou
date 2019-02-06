@@ -1,0 +1,104 @@
+# console.bjou
+
+module console
+
+import "defs.bjou"
+import "uart.bjou"
+import "static.bjou"
+import "cstr.bjou"
+using cstr
+
+type console {
+    ibuff   : static::Vec$char
+    obuff   : static::Vec$char
+    read_fn : <() : char>
+
+    proc create(ibuff : char[], obuff : char[]) : console {
+        c := { console:
+                .obuff   = static::Vec.create(obuff),
+                .ibuff   = static::Vec.create(ibuff)
+        }
+        c.echo_on()
+        return c
+    }
+
+    proc echo_on(this) {
+        this.read_fn = uart::read_echo
+    }
+
+    proc echo_off(this) {
+        this.read_fn = uart::read
+    }
+
+    proc flush(this) {
+        this.obuff.push('\0')
+        uart::write_string(this.obuff.data)
+        this.obuff.clear()
+    }
+
+    proc readchar(this) : char {
+        c := '\0'
+        while not c    { c = this.read_fn() }
+        return c
+    }
+
+    proc readln(this, dst : char*) {
+        c := '\0'
+        while true {
+            while not (c = this.read_fn()) {}
+            
+            if c == uart::CR {
+                this.ibuff.push('\n')
+                break
+            } else {
+                this.ibuff.push(c)
+            }
+
+            if this.ibuff.len == this.ibuff.cap - 1
+                break
+        }
+        this.ibuff.push('\0')
+        cstrcpy(dst, this.ibuff.data)
+        this.ibuff.clear()
+    }
+
+    proc write(this, c : char) {
+        this.obuff.push(c)
+
+        if c == '\n'
+        or this.obuff.len == this.obuff.cap - 1
+            this.flush()
+    }
+
+    proc write(this, s : char*) {
+        while @s {
+            this.obuff.push(@s)
+
+            if @s == '\n'
+            or this.obuff.len == this.obuff.cap - 1
+                this.flush()
+
+            s += 1
+        }
+    }
+
+    proc write(this, i : i32) {
+        buff : char[64]
+        itoa(i, buff)
+        this.write(buff)
+    }
+
+    proc writeln(this) {
+        this.write("\n")
+    }
+
+    proc writeln(this, i : i32) {
+        this.write(i)
+        this.write("\n")
+    }
+
+    proc writeln(this, s : char*) {
+        this.write(s)
+        this.write("\n")
+    }
+}

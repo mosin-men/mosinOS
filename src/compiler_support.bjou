@@ -1,0 +1,26 @@
+# compiler_support.bjou
+
+module compiler_support
+
+# dumb and slow
+proc __no_mangle__ i32mul(a : i32, b : i32) : i32 {
+    sum := 0i32
+    for i := 0; i < b; i += 1    sum += a
+    return sum
+}
+
+proc __no_mangle__ i32div(a : i32, b : i32) : i32 {
+    result := 0i32
+
+    while a >  0
+    and   a >= b {
+        a      -= b
+        result += 1
+    }
+
+    return result
+}
+
+proc __no_mangle__ i32mod(a : i32, b : i32) : i32 {
+    return a - i32mul(b, i32div(a, b))
+}

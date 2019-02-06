@@ -1,15 +1,40 @@
 # mosin_os.bjou
 
-import "uart.bjou"
+import "compiler_support.bjou"
+import "__slice.bjou"
 import "defs.bjou"
+import "uart.bjou"
+import "console.bjou"
+using console
 
 proc __no_mangle__ main() {
     uart::configure()
-    uart::write_string(defs::UART_TEST_STR)
+    
+    con_ibuff : char[defs::CONSOLE_BUFF_SZ]
+    con_obuff : char[defs::CONSOLE_BUFF_SZ]
+    con := console.create([ con_ibuff, 0:|con_ibuff| ], [ con_obuff, 0:|con_obuff| ])
 
-    while true    { echo() }
-}
+    con.writeln("Hello, console.")
+    buff : char[256]
+    cstrcpy(buff, "This is reversed.")
+    cstrrev(buff)
+    con.writeln(buff)
+    con.writeln(-12345)
+    con.writeln("Type 'n' to show the next message.")
+    con.write("this shouldn't show until after 'n' because of buffering")
 
-proc echo() {
-    using uart    read().write()
+    while uart::read() != 'n' {}
+    con.writeln()
+   
+    con.write("Give me a string: ")
+    con.flush()
+    con.readln(buff)
+    con.write("You typed '")
+    con.write(buff)
+    con.writeln("'")
+
+    con.write("Now echoing... ")
+    con.flush()
+
+    while true    uart::read_echo()
 }

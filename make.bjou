@@ -9,6 +9,7 @@ import "build.bjou"
 
     options.output_name  = "mosin_os.o"
     options.targettriple = "riscv32-unknown-elf"
+    # options.emitllvm     = true
     options.nopreload    = true
     options.noabc        = true
     options.c            = true
@@ -23,14 +24,13 @@ import "build.bjou"
     # generate defs
     defs_path := "src/defs.bjou" 
     print "generating '%'", defs_path
-
     defs := build::DefsFile.create(defs_path, "defs")
-    defs.add_def("QEMU",   0i64)
-    defs.add_def("E31",    1i64)
-    defs.add_def("HIFIVE", 2i64)
-    defs.add_def_code("TARGET", "QEMU")
 
-    defs.add_def("UART_TEST_STR", "UART Test\n")
+    defs.add_def(     "QEMU",            0i64)
+    defs.add_def(     "E31",             1i64)
+    defs.add_def(     "HIFIVE",          2i64)
+    defs.add_def_code("TARGET",          "QEMU")
+    defs.add_def(     "CONSOLE_BUFF_SZ", 256i64)
 
     defs.close()
 
