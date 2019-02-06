@@ -19,8 +19,6 @@ using defs
 const BAUD_RATE    := 115200u32
 const UART_DIVISOR := FREQ / BAUD_RATE - 1u32
 
-const CR := 13 as char
-
 # Offsets for UART registers. Actual addresses can be calculated by:
 #   ADDR + (<register> * 4).
 enum UartRegisters {
@@ -81,8 +79,8 @@ proc read() : char {
 
 proc read_echo() : char {
     c := read()
-    if c == CR    write('\n')
-    else          write(c)
+    if c == '\r'    write('\n')
+    else            write(c)
     return c
 }
 

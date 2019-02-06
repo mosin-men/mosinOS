@@ -47,7 +47,7 @@ type console {
         while true {
             while not (c = this.read_fn()) {}
             
-            if c == uart::CR {
+            if c == '\r' {
                 this.ibuff.push('\n')
                 break
             } else {
