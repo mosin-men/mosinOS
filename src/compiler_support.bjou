@@ -2,6 +2,15 @@
 
 module compiler_support
 
+import "mem.bjou"
+
+# Provide these bindings so that compiler generated memcpy and memset
+# calls still work.
+proc __no_mangle__ memcpy(dst : void*, src : void*, nbytes : u64) : void*
+    return mem::mcopy(dst, src, nbytes)
+proc __no_mangle__ memset(dst : void*, val : u8, nbytes : u64) : void*
+    return mem::mset(dst, val, nbytes)
+
 # dumb and slow
 proc __no_mangle__ i32mul(a : i32, b : i32) : i32 {
     sum := 0i32

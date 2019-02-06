@@ -53,10 +53,3 @@ proc mset(dst : void*, val : u8, nbytes : u64) : void* {
 
     return dst
 }
-
-# Provide these bindings so that compiler generated memcpy and memset
-# calls still work.
-proc __no_mangle__ memcpy(dst : void*, src : void*, nbytes : u64) : void*
-    return mcopy(dst, src, nbytes)
-proc __no_mangle__ memset(dst : void*, val : u8, nbytes : u64) : void*
-    return mset(dst, val, nbytes)
