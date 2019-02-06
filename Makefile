@@ -1,7 +1,5 @@
 NAME=mosin_os
 QEMU=qemu-system-riscv32
-XARGO=xargo
-TARGET=riscv32imac-unknown-none-elf
 CROSS=riscv64-unknown-linux-gnu
 CC=$(CROSS)-gcc
 CXX=$(CROSS)-g++
@@ -10,7 +8,7 @@ GDB=$(CROSS)-gdb
 
 LDSFILE=lds/qemu.lds
 ASFLAGS=-march=rv32ima -mabi=ilp32 -O0 -g
-LDFLAGS=-T$(LDSFILE) -march=rv32ima -mabi=ilp32 -O0 -g -nostartfiles -nostdinc -ffreestanding -nostdlib -Ltarget/$(TARGET)/debug -L.
+LDFLAGS=-T$(LDSFILE) -march=rv32ima -mabi=ilp32 -O0 -g -nostartfiles -nostdinc -ffreestanding -nostdlib -L.
 OUT=$(NAME).elf
 
 QEMUARGS=-machine sifive_e -nographic -serial mon:stdio -kernel $(OUT)
@@ -18,21 +16,20 @@ QEMUARGS=-machine sifive_e -nographic -serial mon:stdio -kernel $(OUT)
 ASM_SOURCES=$(wildcard asm/*.S)
 ASM_OBJECTS=$(patsubst %.S,%.o,$(ASM_SOURCES))
 
-RUST_SOURCES=$(wildcard src/*.rs)
-RUST_OBJECT=target/$(TARGET)/debug/lib$(NAME).a
+BJOU_OBJECT=build/$(NAME).o
 
-LIBS=-l$(NAME) -lgcc
+LIBS=-lgcc
 
 all: $(OUT)
 
-$(OUT): Makefile $(ASM_OBJECTS) $(RUST_OBJECT) $(LDSFILE)
-	$(CC) $(LDFLAGS) -o $(OUT) $(ASM_OBJECTS) $(LIBS)
+$(OUT): Makefile $(ASM_OBJECTS) $(BJOU_OBJECT) $(LDSFILE)
+	$(CC) $(LDFLAGS) -o $(OUT) $(ASM_OBJECTS) $(BJOU_OBJECT) $(LIBS)
 
 %.o: %.S Makefile
 	$(CC) $(ASFLAGS) -c $< -o $@
 
-$(RUST_OBJECT): Makefile $(RUST_SOURCES)
-	$(XARGO) build --features qemu --target=$(TARGET)
+$(BJOU_OBJECT):
+	./bjou make.bjou
 
 qemu: $(OUT)
 	$(QEMU) $(QEMUARGS)
@@ -44,5 +41,5 @@ gdb: $(OUT)
 .PHONY: clean
 
 clean: 
-	$(XARGO) clean
+	rm -rf build
 	rm -fr $(OUT) $(ASM_OBJECTS)

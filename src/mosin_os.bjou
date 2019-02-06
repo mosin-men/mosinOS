@@ -1,0 +1,15 @@
+# mosin_os.bjou
+
+import "uart.bjou"
+import "defs.bjou"
+
+proc __no_mangle__ main() {
+    uart::configure()
+    uart::write_string(defs::UART_TEST_STR)
+
+    while true    { echo() }
+}
+
+proc echo() {
+    using uart    read().write()
+}
