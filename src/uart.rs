@@ -96,7 +96,7 @@ impl UartDevice {
             unsafe {
                 fifo_full = mem.offset(UartRegisters::TXDATA as isize).read_volatile();
             }
-            if fifo_full & 1 == 0 {
+            if fifo_full & (1 << 31) == 0 {
                 break;
             }
         }
