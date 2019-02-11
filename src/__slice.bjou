@@ -4,9 +4,9 @@ module __slice
 
 type __bjou_slice$T {
     __data : T*
-    __len  : u32
+    __len  : u64
 
-    proc create(src : T*, start : u32, len : u32) : __bjou_slice$T {
+    proc create(src : T*, start : u64, len : u64) : __bjou_slice$T {
         return { __bjou_slice$T:
             .__data = src + start,
             .__len = len
@@ -14,7 +14,7 @@ type __bjou_slice$T {
     }
 }
 
-proc __bjou_slice_subscript$T(_s : T[] ref, _i : u32) : T {
+proc __bjou_slice_subscript$T(_s : T[] ref, _i : u64) : T {
     return \__slice_data{_s}[_i]
 }
 

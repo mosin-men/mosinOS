@@ -8,17 +8,26 @@ import "static.bjou"
 import "cstr.bjou"
 using cstr
 
+__con_ibuff : char[defs::CONSOLE_BUFF_SZ]
+__con_obuff : char[defs::CONSOLE_BUFF_SZ]
+__con       : console
+
+# proc init() {
+#     __con = console.create([ __con_ibuff, 0:|__con_ibuff| ], [ __con_obuff, 0:|__con_obuff| ])
+# }
+
 type console {
     ibuff   : static::Vec$char
     obuff   : static::Vec$char
     read_fn : <() : char>
 
     proc create(ibuff : char[], obuff : char[]) : console {
-        c := { console:
-                .obuff   = static::Vec.create(obuff),
-                .ibuff   = static::Vec.create(ibuff)
-        }
+        ibuff' := static::Vec.create(ibuff)
+        obuff' := static::Vec.create(obuff)
+
+        c := { console: .ibuff = ibuff', .obuff = obuff' }
         c.echo_on()
+
         return c
     }
 
@@ -81,24 +90,52 @@ type console {
             s += 1
         }
     }
-
-    proc write(this, i : i32) {
-        buff : char[64]
-        itoa(i, buff)
-        this.write(buff)
-    }
-
-    proc writeln(this) {
-        this.write("\n")
-    }
-
-    proc writeln(this, i : i32) {
-        this.write(i)
-        this.write("\n")
-    }
-
-    proc writeln(this, s : char*) {
-        this.write(s)
-        this.write("\n")
-    }
 }
+
+# proc readchar() : char {
+#     return __con.readchar()
+# }
+
+# proc readln(dst : char*) {
+#     __con.readln(dst)
+# }
+
+# proc write(c : char) {
+#     __con.write(c)
+# }
+
+# proc write(s : char*) {
+#     __con.write(s)
+# }
+
+# proc write(i : i32) {
+#     buff : char[64]
+#     itoa(i, buff)
+#     __con.write(buff)
+# }
+
+# proc writeln() {
+#     __con.write("\n")
+# }
+
+# proc writeln(i : i32) {
+#     __con.write(i)
+#     __con.write("\n")
+# }
+
+# proc writeln(s : char*) {
+#     __con.write(s)
+#     __con.write("\n")
+# }
+
+# proc flush() {
+#     __con.flush()
+# }
+    
+# proc echo_on() {
+#     __con.echo_on()
+# }
+
+# proc echo_off() {
+#     __con.echo_off()
+# }

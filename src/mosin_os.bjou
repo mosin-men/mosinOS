@@ -7,34 +7,39 @@ import "uart.bjou"
 import "console.bjou"
 using console
 
+my_global : u32
+
+proc __no_mangle__ debug1() { while true {} }
+
 proc __no_mangle__ main() {
     uart::configure()
-    
-    con_ibuff : char[defs::CONSOLE_BUFF_SZ]
-    con_obuff : char[defs::CONSOLE_BUFF_SZ]
-    con := console.create([ con_ibuff, 0:|con_ibuff| ], [ con_obuff, 0:|con_obuff| ])
-
-    con.writeln("Hello, console.")
-    buff : char[256]
-    cstrcpy(buff, "This is reversed.")
-    cstrrev(buff)
-    con.writeln(buff)
-    con.writeln(-12345)
-    con.writeln("Type 'n' to show the next message.")
-    con.write("this shouldn't show until after 'n' because of buffering")
-
-    while uart::read() != 'n' {}
-    con.writeln()
+    # console::init()
    
-    con.write("Give me a string: ")
-    con.flush()
-    con.readln(buff)
-    con.write("You typed '")
-    con.write(buff)
-    con.writeln("'")
+    # write("my_global = ")
+    debug1()
+    # writeln(my_global)
 
-    con.write("Now echoing... ")
-    con.flush()
+    # writeln("Hello, console.")
+    # buff : char[256]
+    # cstrcpy(buff, "This is reversed.")
+    # cstrrev(buff)
+    # writeln(buff)
+    # writeln(-12345)
+    # writeln("Type 'n' to show the next message.")
+    # write("this shouldn't show until after 'n' because of buffering")
 
-    while true    uart::read_echo()
+    # while uart::read() != 'n' {}
+    # writeln()
+   
+    # write("Give me a string: ")
+    # flush()
+    # readln(buff)
+    # write("You typed '")
+    # write(buff)
+    # writeln("'")
+
+    # write("Now echoing... ")
+    # flush()
+
+    # while true    uart::read_echo()
 }

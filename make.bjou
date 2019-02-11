@@ -7,9 +7,9 @@ import "build.bjou"
 
     options := build::BuildOptions.create()
 
-    options.output_name  = "mosin_os.o"
+    options.output_name  = "mosin_os.ll"
     options.targettriple = "riscv32-unknown-elf"
-    # options.emitllvm     = true
+    options.emitllvm     = true
     options.nopreload    = true
     options.noabc        = true
     options.c            = true

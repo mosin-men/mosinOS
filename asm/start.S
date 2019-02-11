@@ -1,4 +1,7 @@
 .option norvc
+.section .data
+test_data:.int 55
+
 .section .text.init
 .global _start
 _start:
@@ -13,7 +16,7 @@ _start:
 	bnez	t0, park
 
 	# Just CPU 0 gets to this point
-	la	gp, __global_pointer$
+	la	gp, __global_pointer_foo$
 	la	sp, _sp
 
 	# Copy data section from the flash memory into RAM.

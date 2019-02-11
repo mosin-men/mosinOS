@@ -121,7 +121,7 @@ SECTIONS
     *(.data .data.*)
     *(.gnu.linkonce.d.*)
     . = ALIGN(8);
-    PROVIDE( __global_pointer$ = . + 0x800 );
+    PROVIDE( __global_pointer_foo$ = . + 0x800 );
     *(.sdata .sdata.*)
     *(.gnu.linkonce.s.*)
     . = ALIGN(8);
@@ -140,11 +140,11 @@ SECTIONS
   PROVIDE( __bss_start = . );
   .bss            :
   {
-    *(.sbss*)
-    *(.gnu.linkonce.sb.*)
+    /* *(.sbss*) */
+    /* *(.gnu.linkonce.sb.*) */
     *(.bss .bss.*)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
+    /* *(.gnu.linkonce.b.*) */
+    /* *(COMMON) */
     . = ALIGN(4);
   } >ram AT>ram :ram
 
