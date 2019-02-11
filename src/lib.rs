@@ -3,7 +3,8 @@
 #![no_std]
 
 // Module imports
-mod uart;
+mod stackvec;
+mod console;
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -27,14 +28,5 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 #[no_mangle]
 fn main() {
     let test_str = "UART test.\n";
-    uart::UartDevice::configure();
-
-    for c in test_str.chars() {
-        uart::UartDevice::uart_write(c);
-    }
-
-    loop {
-        let r: char = uart::UartDevice::uart_read();
-        uart::UartDevice::uart_write(r);
-    }
+    console::Console::init();
 }
