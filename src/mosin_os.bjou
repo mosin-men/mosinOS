@@ -13,33 +13,21 @@ proc __no_mangle__ debug1() { while true {} }
 
 proc __no_mangle__ main() {
     uart::configure()
-    # console::init()
+    console::init()
    
-    # write("my_global = ")
-    debug1()
-    # writeln(my_global)
+    writeln("Hello, console.")
+    buff : char[256]
+    cstrcpy(buff, "This is reversed.")
+    cstrrev(buff)
+    writeln(buff)
+    writeln(-12345)
+    write("Give me a string: ")
+    readln(buff)
+    write("You typed '")
+    write(buff)
+    writeln("'")
 
-    # writeln("Hello, console.")
-    # buff : char[256]
-    # cstrcpy(buff, "This is reversed.")
-    # cstrrev(buff)
-    # writeln(buff)
-    # writeln(-12345)
-    # writeln("Type 'n' to show the next message.")
-    # write("this shouldn't show until after 'n' because of buffering")
+    write("Now echoing... ")
 
-    # while uart::read() != 'n' {}
-    # writeln()
-   
-    # write("Give me a string: ")
-    # flush()
-    # readln(buff)
-    # write("You typed '")
-    # write(buff)
-    # writeln("'")
-
-    # write("Now echoing... ")
-    # flush()
-
-    # while true    uart::read_echo()
+    while true    uart::read_echo()
 }

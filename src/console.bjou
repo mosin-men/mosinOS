@@ -4,28 +4,18 @@ module console
 
 import "defs.bjou"
 import "uart.bjou"
-import "static.bjou"
 import "cstr.bjou"
 using cstr
 
-__con_ibuff : char[defs::CONSOLE_BUFF_SZ]
-__con_obuff : char[defs::CONSOLE_BUFF_SZ]
-__con       : console
+_con       : console
 
-# proc init() {
-#     __con = console.create([ __con_ibuff, 0:|__con_ibuff| ], [ __con_obuff, 0:|__con_obuff| ])
-# }
+proc init() { _con = console.create() }
 
 type console {
-    ibuff   : static::Vec$char
-    obuff   : static::Vec$char
     read_fn : <() : char>
 
-    proc create(ibuff : char[], obuff : char[]) : console {
-        ibuff' := static::Vec.create(ibuff)
-        obuff' := static::Vec.create(obuff)
-
-        c := { console: .ibuff = ibuff', .obuff = obuff' }
+    proc create() : console {
+        c := { console: }
         c.echo_on()
 
         return c
@@ -37,12 +27,6 @@ type console {
 
     proc echo_off(this) {
         this.read_fn = uart::read
-    }
-
-    proc flush(this) {
-        this.obuff.push('\0')
-        uart::write_string(this.obuff.data)
-        this.obuff.clear()
     }
 
     proc readchar(this) : char {
@@ -57,85 +41,72 @@ type console {
             while not (c = this.read_fn()) {}
             
             if c == '\r' {
-                this.ibuff.push('\n')
+                @dst = '\n'
+                dst += 1
                 break
             } else {
-                this.ibuff.push(c)
+                @dst = c
+                dst += 1
             }
-
-            if this.ibuff.len == this.ibuff.cap - 1
-                break
         }
-        this.ibuff.push('\0')
-        cstrcpy(dst, this.ibuff.data)
-        this.ibuff.clear()
+        @dst = '\0'
     }
 
     proc write(this, c : char) {
-        this.obuff.push(c)
-
-        if c == '\n'
-        or this.obuff.len == this.obuff.cap - 1
-            this.flush()
+        if c == '\n' {
+            uart::write('\r')
+        }
+        uart::write(c)
     }
 
     proc write(this, s : char*) {
         while @s {
-            this.obuff.push(@s)
-
-            if @s == '\n'
-            or this.obuff.len == this.obuff.cap - 1
-                this.flush()
-
+            this.write(@s)
             s += 1
         }
     }
 }
 
-# proc readchar() : char {
-#     return __con.readchar()
-# }
+proc readchar() : char {
+    return _con.readchar()
+}
 
-# proc readln(dst : char*) {
-#     __con.readln(dst)
-# }
+proc readln(dst : char*) {
+    _con.readln(dst)
+}
 
-# proc write(c : char) {
-#     __con.write(c)
-# }
+proc write(c : char) {
+    _con.write(c)
+}
 
-# proc write(s : char*) {
-#     __con.write(s)
-# }
+proc write(s : char*) {
+    _con.write(s)
+}
 
-# proc write(i : i32) {
-#     buff : char[64]
-#     itoa(i, buff)
-#     __con.write(buff)
-# }
+proc write(i : i32) {
+    buff : char[64]
+    itoa(i, buff)
+    _con.write(buff)
+}
 
-# proc writeln() {
-#     __con.write("\n")
-# }
+proc writeln() {
+    _con.write("\n")
+}
 
-# proc writeln(i : i32) {
-#     __con.write(i)
-#     __con.write("\n")
-# }
+proc writeln(i : i32) {
+    _con.write(i)
+    _con.write("\n")
+}
 
-# proc writeln(s : char*) {
-#     __con.write(s)
-#     __con.write("\n")
-# }
+proc writeln(s : char*) {
+    _con.write(s)
+    _con.write("\n")
+}
 
-# proc flush() {
-#     __con.flush()
-# }
-    
-# proc echo_on() {
-#     __con.echo_on()
-# }
+proc echo_on() {
+    _con.echo_on()
+}
 
-# proc echo_off() {
-#     __con.echo_off()
-# }
+proc echo_off() {
+    _con.echo_off()
+}
