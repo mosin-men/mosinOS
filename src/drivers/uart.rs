@@ -1,9 +1,8 @@
-/* UART code goes here. */
-
 /* Define device-specific frequencies and memory-map addresses. These all
  * come from the lab writeup, so hopefully no further explanation is
  * needed. */
  /* Some of multi-line IFDEF feature would be pretty killer here. */
+
 #[cfg(feature="qemu")]
 mod uart_config {
     pub static FREQ: u32 = 65_000_000;

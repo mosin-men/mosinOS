@@ -3,9 +3,12 @@
 #![no_std]
 
 // Module imports
-mod stackvec;
 mod console;
+mod drivers;
+mod utils;
 use core::fmt::Write;
+#[macro_use(print, println)]
+
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -28,10 +31,10 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[no_mangle]
 fn main() -> ! {
-    let mut con = console::Console{};
-    con.init();
+    console::init();
     loop {
-        let r = con.getc();
-        con.putc(r);
+        if let Some(c) = console::getc() {
+            println!("Got a character: {}", c);
+        }
     };
 }
