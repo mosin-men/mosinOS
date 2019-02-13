@@ -31,6 +31,8 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[no_mangle]
 fn main() -> ! {
+    /* Example of using the console to get characters,
+     * then printing them back out. */
     console::init();
     loop {
         if let Some(c) = console::getc() {
