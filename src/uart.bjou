@@ -3,8 +3,7 @@
 
 module uart
 
-import "defs.bjou"
-using defs
+using import "defs.bjou"
 
 \static_if{ TARGET == QEMU
     const FREQ         := 65000000u32

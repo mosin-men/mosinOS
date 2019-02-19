@@ -1,0 +1,27 @@
+# asm_call.bjou
+
+module asm_call
+
+proc ptr_to_u32(ptr : void*) : u32
+    return ptr as u32
+
+extern _wfi()
+abstract type wfi { const routine := _wfi }
+
+proc asm_call$T() : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <() : u32>)
+    return fn()
+}
+
+proc asm_call$T(a0 : u32) : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <(u32) : u32>)
+    return fn(a0)
+}
+
+proc asm_call$T(a0 : u32, a1 : u32) : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <(u32, u32) : u32>)
+    return fn(a0, a1)
+}

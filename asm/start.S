@@ -1,6 +1,5 @@
 .option norvc
 .section .data
-test_data:.int 55
 
 .section .text.init
 .global _start

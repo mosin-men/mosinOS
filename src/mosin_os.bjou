@@ -4,18 +4,17 @@ import "compiler_support.bjou"
 import "__slice.bjou"
 import "defs.bjou"
 import "uart.bjou"
-import "console.bjou"
-using console
-
-my_global : u32
-
-proc __no_mangle__ debug1() { while true {} }
+using import "console.bjou"
+using import "asm_call.bjou"
 
 proc __no_mangle__ main() {
     uart::configure()
     console::init()
-   
+
     writeln("Hello, console.")
+
+    # asm_call$wfi()
+
     buff : char[256]
     cstrcpy(buff, "This is reversed.")
     cstrrev(buff)

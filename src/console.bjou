@@ -4,8 +4,7 @@ module console
 
 import "defs.bjou"
 import "uart.bjou"
-import "cstr.bjou"
-using cstr
+using import "cstr.bjou"
 
 _con       : console
 
@@ -94,7 +93,9 @@ proc writeln() {
 }
 
 proc writeln(i : i32) {
-    _con.write(i)
+    buff : char[64]
+    itoa(i, buff)
+    _con.write(buff)
     _con.write("\n")
 }
 

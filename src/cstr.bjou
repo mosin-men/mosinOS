@@ -4,8 +4,7 @@
 module cstr
 
 import "mem.bjou"
-import "compiler_support.bjou"
-using compiler_support
+using import "compiler_support.bjou"
 
 proc cstrlen(s : char*) : u64 {
     len := 0u64
