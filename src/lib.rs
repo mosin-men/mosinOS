@@ -34,9 +34,19 @@ fn main() -> ! {
     /* Example of using the console to get characters,
      * then printing them back out. */
     console::init();
+    unsafe{
+      asm!("ecall");
+    }
     loop {
         if let Some(c) = console::getc() {
             println!("Got a character: {}", c);
         }
     };
+}
+
+#[no_mangle]
+fn trap_handler() {
+  console::init();
+  println!("In trap Handler");
+  loop{};
 }

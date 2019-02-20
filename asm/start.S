@@ -46,6 +46,10 @@ _start:
 	li	a0, 0
 	li	a1, 0
 
+  #set the mvec to the trap handler
+  la t0, _trap_handler
+  csrw mtvec, t0
+
 	# Go into machine mode
 	# Put mepc into main and return to jump to it.
 	# This sets MPP to 3 (machine mode).
