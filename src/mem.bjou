@@ -1,4 +1,8 @@
 # mem.bjou
+#
+# General memory manipulation procedures.
+#
+# Copy/set ranges of memory in machine-word chunks for performance.
 
 module mem
 

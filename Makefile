@@ -29,7 +29,7 @@ $(OUT): Makefile $(ASM_OBJECTS) $(BJOU_OBJECT) $(LDSFILE)
 	$(CC) $(ASFLAGS) -c $< -o $@
 
 $(BJOU_OBJECT):
-	./bjou make.bjou
+	bjou make.bjou
 
 qemu: $(OUT)
 	$(QEMU) $(QEMUARGS)

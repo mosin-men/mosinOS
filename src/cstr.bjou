@@ -1,10 +1,10 @@
 # cstr.bjou
-# null-terminated string utility procedures
+#
+# Null-terminated string utility procedures
 
 module cstr
 
 import "mem.bjou"
-using import "compiler_support.bjou"
 
 proc cstrlen(s : char*) : u64 {
     len := 0u64
@@ -81,11 +81,11 @@ proc itoa(i : i32, a : char*) {
   
     # Process individual digits 
     while i { 
-        rem := i32mod(i, 10) 
+        rem := i % 10
         a[it] = << if rem > 9    <-(rem - 10 + ('a' as u8))
                    else          <-(rem      + ('0' as u8)) >> 
         it += 1
-        i   = i32div(i, 10)
+        i  /= 10
     } 
   
     # If number is negative, append '-' 

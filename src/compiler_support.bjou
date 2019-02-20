@@ -1,4 +1,7 @@
 # compiler_support.bjou
+#
+# A module to provide things that the compiler assumes will
+# be available.
 
 module compiler_support
 
@@ -6,30 +9,10 @@ import "mem.bjou"
 
 # Provide these bindings so that compiler generated memcpy and memset
 # calls still work.
-proc __no_mangle__ memcpy(dst : void*, src : void*, nbytes : u64) : void*
+proc __no_mangle__ memcpy(dst : void*, src : void*, nbytes : u64) : void* {
     return mem::mcopy(dst, src, nbytes)
-proc __no_mangle__ memset(dst : void*, val : u8, nbytes : u64) : void*
+}
+
+proc __no_mangle__ memset(dst : void*, val : u8, nbytes : u64) : void* {
     return mem::mset(dst, val, nbytes)
-
-# dumb and slow
-proc __no_mangle__ i32mul(a : i32, b : i32) : i32 {
-    sum := 0i32
-    for i := 0; i < b; i += 1    sum += a
-    return sum
-}
-
-proc __no_mangle__ i32div(a : i32, b : i32) : i32 {
-    result := 0i32
-
-    while a >  0
-    and   a >= b {
-        a      -= b
-        result += 1
-    }
-
-    return result
-}
-
-proc __no_mangle__ i32mod(a : i32, b : i32) : i32 {
-    return a - i32mul(b, i32div(a, b))
 }

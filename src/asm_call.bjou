@@ -1,12 +1,32 @@
 # asm_call.bjou
+#
+# Provides general wrappers and bindings for functions defined 
+# externally in assembly.
+#
+# asm_call() takes a template argument T which must have a member
+# constant named 'routine'. 'routine' should evaluate to an extern
+# binding to a function.
+#
+# asm_call() can take 0 to 8 arguments each of type u32.
+# These arguments are passed in the RISC-V registers a0-a7
+# A u32 is returned from argument a0.
+#
+# If an address needs to be passed to an assembly function,
+# ptr_to_u32() is provided as a convenience to cast to u32.
 
 module asm_call
+
+# begin bindings and type wrappers
+extern _wfi()
+abstract type wfi { const routine := _wfi }
+# end bindings and type wrappers
+
 
 proc ptr_to_u32(ptr : void*) : u32
     return ptr as u32
 
-extern _wfi()
-abstract type wfi { const routine := _wfi }
+
+
 
 proc asm_call$T() : u32 {
     v_fn := T.routine as void*
@@ -24,4 +44,44 @@ proc asm_call$T(a0 : u32, a1 : u32) : u32 {
     v_fn := T.routine as void*
     fn   := (v_fn as <(u32, u32) : u32>)
     return fn(a0, a1)
+}
+
+proc asm_call$T(a0 : u32, a1 : u32, a2 : u32) : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <(u32, u32, u32) : u32>)
+    return fn(a0, a1, a2)
+}
+
+proc asm_call$T(a0 : u32, a1 : u32, a2 : u32, a3 : u32) : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <(u32, u32, u32, u32) : u32>)
+    return fn(a0, a1, a2, a3)
+}
+
+proc asm_call$T(a0 : u32, a1 : u32, a2 : u32, a3 : u32,
+                a4 : u32) : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <(u32, u32, u32, u32, u32) : u32>)
+    return fn(a0, a1, a2, a3, a4)
+}
+
+proc asm_call$T(a0 : u32, a1 : u32, a2 : u32, a3 : u32,
+                a4 : u32, a5 : u32) : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <(u32, u32, u32, u32, u32, u32) : u32>)
+    return fn(a0, a1, a2, a3, a4, a5)
+}
+
+proc asm_call$T(a0 : u32, a1 : u32, a2 : u32, a3 : u32,
+                a4 : u32, a5 : u32, a6 : u32) : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <(u32, u32, u32, u32, u32, u32, u32) : u32>)
+    return fn(a0, a1, a2, a3, a4, a5, a6)
+}
+
+proc asm_call$T(a0 : u32, a1 : u32, a2 : u32, a3 : u32,
+                a4 : u32, a5 : u32, a6 : u32, a7 : u32) : u32 {
+    v_fn := T.routine as void*
+    fn   := (v_fn as <(u32, u32, u32, u32, u32, u32, u32, u32) : u32>)
+    return fn(a0, a1, a2, a3, a4, a5, a6, a7)
 }

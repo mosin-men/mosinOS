@@ -1,4 +1,9 @@
 # __slice.bjou
+#
+# Taken from the standard __slice.bjou module included with
+# a normal bJou installation
+#
+# Stripped to work on bare-metal MosinOS
 
 module __slice
 

@@ -1,5 +1,6 @@
 # uart.bjou
-# uart driver code
+#
+# UART driver code
 
 module uart
 

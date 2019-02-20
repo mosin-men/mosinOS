@@ -1,4 +1,12 @@
 # console.bjou
+#
+# Provides a higher-level interface to the UART device.
+#
+# The UART driver must be initialized and configured before
+# console will work.
+#
+# console::init() should be called to initialize the singleton
+# console's state.
 
 module console
 

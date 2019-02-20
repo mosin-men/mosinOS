@@ -1,5 +1,6 @@
 # static.bjou
-# static storage utilities
+#
+# Static storage utilities
 
 module static
 
