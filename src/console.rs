@@ -1,35 +1,5 @@
 use crate::drivers::uart as uart;
-use core::fmt::{Write, Error};
-
-const CON_BUFF_SZ : usize = 256;
-
-/*******************
-  print and println
- ******************/
-#[macro_export]
-macro_rules! print {
-    ($($arg:tt)*) => (
-        {
-            let mut con = console::Console{};
-            write!(con, "{}", format_args!($($arg)*));
-        }
-    );
-}
-#[macro_export]
-macro_rules! println {
-    () => (
-        {
-            let mut con = console::Console{};
-            write!(con, "\r\n");
-        }
-    );
-    ($($arg:tt)*) => (
-        {
-            let mut con = console::Console{};
-            write!(con, "{}\r\n", format_args!($($arg)*));
-        }
-    );
-}
+use core::fmt::{Error};
 
 
 /*******************

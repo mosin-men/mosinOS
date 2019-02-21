@@ -13,7 +13,7 @@ _start:
 	bnez	t0, park
 
 	# Just CPU 0 gets to this point
-	la	gp, __global_pointer$
+	la	gp, __global_pointer_mine$
 	la	sp, _sp
 
 	# Copy data section from the flash memory into RAM.

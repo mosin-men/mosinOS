@@ -2,12 +2,44 @@
 //We are not permitted to use the standard library since it isn't written for our operating system
 #![no_std]
 
-// Module imports
+
+/**************************************************************
+  Macros
+**************************************************************/
+#[macro_export]
+macro_rules! print {
+  ($($arg:tt)*) => {
+    let mut con = console::Console();
+    if let Err(_c) = write!(con, "{}", format_args!($($arg)*)){
+      //some error handling?
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! println {
+  () => {
+    let mut con = console::Console{};
+    if let Err(_c) = write!(con, "\r\n"){
+      //some error handling?
+    }
+  };
+  ($($arg:tt)*) => {
+    let mut con = console::Console{};
+    if let Err(_c) = write!(con, "{}\r\n", format_args!($($arg)*)){
+      //some error handling?
+    }
+  };
+}
+
+/**************************************************************
+  Module Imports
+**************************************************************/
 mod console;
 mod drivers;
 mod utils;
+mod trap;
 use core::fmt::Write;
-#[macro_use(print, println)]
 
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
@@ -19,7 +51,11 @@ pub extern fn eh_personality() {}
 #[no_mangle]
 fn abort() -> !
 {
-    loop {}
+    loop {
+      unsafe{
+        asm!("wfi");
+      }
+    }
 }
 
 //Panic handler will execute whenever our rust code panics. -> ! means that this function won't return,
@@ -44,9 +80,3 @@ fn main() -> ! {
     };
 }
 
-#[no_mangle]
-fn trap_handler() {
-  console::init();
-  println!("In trap Handler");
-  loop{};
-}

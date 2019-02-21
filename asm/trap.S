@@ -13,13 +13,14 @@
   lw x\z, ((\z)*4)(\target)
 .endm
 
-
 .section .text
 .align 4
 .global _trap_handler
 _trap_handler:
+
 #save t6 to mscratch
   csrw mscratch, t6
+  
 #set t6 to global context
   la t6, GLOBAL_CTX
 
@@ -35,6 +36,8 @@ _trap_handler:
   csrr t6, mscratch
   sv 31, t5
 #jump to trap_handler in rust
+  csrr a0, mcause
+  csrr a1, mepc
   call trap_handler
 
 # restore t6 register 
@@ -53,5 +56,5 @@ _trap_handler:
 
 #restore t6 from mscratch
   csrr t6, mscratch
-
+  wfi
 #DO RETURN STUFF HERE

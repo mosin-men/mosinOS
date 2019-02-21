@@ -31,8 +31,8 @@ enum UartRegisters {
     RXDATA  = 0x01,
     TXCTRL  = 0x02,
     RXCTRL  = 0x03,
-    IE      = 0x04,
-    IP      = 0x05,
+//  IE      = 0x04,
+//  IP      = 0x05,
     DIV     = 0x06,
 }
 
@@ -52,12 +52,12 @@ impl UartDevice {
            separate functions later, for finer control. */
         /* Set bit 32 (1 << 31) and bit 31 (1 << 30) */
         let mut txreg: u32 = 0;
-        txreg |= (1 << 31);
-        txreg |= (1 << 30);
+        txreg |= 1 << 31;
+        txreg |= 1 << 30;
         
         /* Set bit 32 (1 << 31) */
         let mut rxreg: u32 = 0;
-        rxreg |= (1 << 31);
+        rxreg |= 1 << 31;
 
         /* Populate the memory for the divisor, the transmit control register,
            and the receive control register */
