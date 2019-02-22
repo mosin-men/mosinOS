@@ -1,4 +1,5 @@
-use crate::console;
+use crate::console as console;
+use crate::machine_info::{*};
 use core::fmt::Write;
 
 extern "C" {
@@ -103,4 +104,26 @@ fn update_mepc(mepc: u32) -> u32{
 
     }
   }
+}
+
+// # New comparand is in a1:a0.
+// li t0, -1
+// sw t0, mtimecmp   # No smaller than old value.
+// sw a1, mtimecmp+4 # No smaller than new value.
+// sw a0, mtimecmp   # New value.
+
+pub fn reset_timers() {
+    let mtimelo    : &mut u32 = get_clint_register(ClintRegister::MTIMELO);
+    let mtimehi    : &mut u32 = get_clint_register(ClintRegister::MTIMEHI);
+    let mtimecmplo : &mut u32 = get_clint_register(ClintRegister::MTIMECMPLO);
+    let mtimecmphi : &mut u32 = get_clint_register(ClintRegister::MTIMECMPHI);
+
+    let interval = (FREQ / 100) as u64;
+
+    let mtime64    = ((*mtimehi as u64) << 32) + (*mtimelo as u64);
+    let mtimecmp64 = mtime64 + interval; 
+
+    *mtimecmplo = 0xFFFFFFFF;
+    *mtimecmphi = (mtimecmp64 >> 32) as u32;
+    *mtimecmplo = (mtimecmp64 & 0x00000000FFFFFFFF) as u32;
 }

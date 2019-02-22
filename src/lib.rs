@@ -44,6 +44,7 @@ macro_rules! println {
 mod console;
 mod drivers;
 mod utils;
+mod machine_info;
 mod trap;
 use core::fmt::Write;
 
@@ -73,6 +74,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[no_mangle]
 fn main() -> ! {
+    trap::reset_timers();
     /* Example of using the console to get characters,
      * then printing them back out. */
     console::init();
