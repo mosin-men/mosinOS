@@ -99,3 +99,32 @@ proc itoa(i : i32, a : char*) {
     # Reverse the string 
     cstrrev(a)
 }
+
+proc _num_hex_digits(n : u32) : u32 {
+    if n == 0    return 1
+
+    ret := 0u32
+    for ; n != 0; n = n bshr 4 {
+        ret += 1
+    }
+    return ret
+}
+
+proc itoax(u : u32, a : char*) {
+    hex_lookup := "0123456789abcdef"
+    len := _num_hex_digits(u)
+
+    if len band 1 {
+        @a = '0'
+        a += 1
+    }
+    a[len] = '\0'
+
+    len -= 1
+    while len >= 0 {
+        a[len] = hex_lookup[u band 0xf]
+
+        u    = u bshr 4
+        len -= 1
+    }
+}

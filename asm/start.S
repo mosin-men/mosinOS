@@ -15,7 +15,7 @@ _start:
 	bnez	t0, park
 
 	# Just CPU 0 gets to this point
-	la	gp, __global_pointer_foo$
+	la	gp, __global_pointer_mine$
 	la	sp, _sp
 
 	# Copy data section from the flash memory into RAM.
@@ -47,6 +47,10 @@ _start:
 	sw	ra, 8(sp)
 	li	a0, 0
 	li	a1, 0
+
+    #set the mvec to the trap handler
+    la t0, _trap_handler
+    csrw mtvec, t0
 
 	# Go into machine mode
 	# Put mepc into main and return to jump to it.

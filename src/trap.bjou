@@ -1,0 +1,11 @@
+# trap.bjou
+
+module trap
+
+using import "console.bjou"
+
+proc __no_mangle__ trap_handler(cause : u32, mepc : u32) {
+    writeln("In trap handler")
+    write("cause: ") writeln(cause)
+    write("mepc:  ") writehexln(mepc)
+}
