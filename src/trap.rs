@@ -39,8 +39,6 @@ const   SPAGEFAULT: u32 = 15;
 fn trap_handler(cause: u32, mepc: u32) -> u32{
   let code = cause & CODE_MASK;
   let sync = cause & INTERRUPT;
-  println!("In trap Handler");
-  println!("{},{}, {:X}", cause, code, mepc);
   match sync {
     INTERRUPT => {
         ahandler(code);
@@ -106,35 +104,59 @@ fn update_mepc(mepc: u32) -> u32{
   }
 }
 
-// # New comparand is in a1:a0.
-// sw t0, mtimecmp   # No smaller than old value.
-// li t0, -1
-// sw a1, mtimecmp+4 # No smaller than new value.
-// sw a0, mtimecmp   # New value.
-
 pub fn reset_timers() {
-    let mtimelo    : &mut u32 = get_clint_register(ClintRegister::MTIMELO);
-    let mtimehi    : &mut u32 = get_clint_register(ClintRegister::MTIMEHI);
-    let mtimecmplo : &mut u32 = get_clint_register(ClintRegister::MTIMECMPLO);
-    let mtimecmphi : &mut u32 = get_clint_register(ClintRegister::MTIMECMPHI);
+    let mtimelo        : &mut u32 = get_clint_register(ClintRegister :: MTIMELO);
+    let mtimehi        : &mut u32 = get_clint_register(ClintRegister :: MTIMEHI);
+    let mtimecmplo     : &mut u32 = get_clint_register(ClintRegister :: MTIMECMPLO);
+    let mtimecmphi     : &mut u32 = get_clint_register(ClintRegister :: MTIMECMPHI);
 
-    let cur_mtimelo: u32 = *mtimelo;
-    let cur_mtimehi: u32 = *mtimehi;
-    let cur_mtimecmplo: u32 = *mtimecmplo;
-    let cur_mtimecmphi: u32 = *mtimecmphi;
+    let cur_mtimelo    : u32      = *mtimelo;
+    let cur_mtimehi    : u32      = *mtimehi;
+    let cur_mtimecmplo : u32      = *mtimecmplo;
+    let cur_mtimecmphi : u32      = *mtimecmphi;
 
+    let interval = (FREQ as u64);
 
-    println!("{:X} {:X} {:X} {:X}", cur_mtimehi, cur_mtimelo, cur_mtimecmphi, cur_mtimecmplo);
+    let mtime64        : u64 = ((cur_mtimehi as u64) << 32) + (cur_mtimelo as u64);
+    let mtimecmp64     : u64 = mtime64 + interval;
+    let new_mtimecmphi : u32 = (mtimecmp64 >> 32) as u32;
+    let new_mtimecmplo : u32 = (mtimecmp64 & 0x00000000FFFFFFFF) as u32;
 
-    let interval = (FREQ as u64) / 100;
-
-    let mtime64: u64    = ((cur_mtimehi as u64) << 32) + (cur_mtimelo as u64);
-    let cur_mtimecmp64: u64    = (((cur_mtimecmphi) as u64) << 32) + ((cur_mtimecmplo) as u64);
-    let mtimecmp64: u64 = mtime64 + interval;
-    println!("{:X}, {:X}, {}, {:X}", mtime64, cur_mtimecmp64, mtime64.wrapping_sub(cur_mtimecmp64), mtimecmp64);
-    unsafe{
-      (mtimecmplo as *mut u32).write_volatile(0xFFFFFFFF);
-      (mtimecmphi as *mut u32).write_volatile((mtimecmp64 >> 32) as u32);
-      (mtimecmplo as *mut u32).write_volatile((mtimecmp64 & 0x00000000FFFFFFFF) as u32);
-    }
+    *mtimecmplo = new_mtimecmplo;
+    *mtimecmphi = new_mtimecmphi;
 }
+
+// pub fn reset_timers() {
+//     unsafe {
+//         let mtimelo    : *mut u32 = get_clint_register(ClintRegister::MTIMELO);
+//         let mtimehi    : *mut u32 = get_clint_register(ClintRegister::MTIMEHI);
+//         let mtimecmplo : *mut u32 = get_clint_register(ClintRegister::MTIMECMPLO);
+//         let mtimecmphi : *mut u32 = get_clint_register(ClintRegister::MTIMECMPHI);
+
+//         println!("{:p}", mtimecmplo);
+//         println!("{:p}", mtimecmphi);
+
+//         let cur_mtimelo   : u32 = *mtimelo;
+//         let cur_mtimehi   : u32 = *mtimehi;
+//         let cur_mtimecmplo: u32 = *mtimecmplo;
+//         let cur_mtimecmphi: u32 = *mtimecmphi;
+
+//         let interval = (FREQ as u64) / 100;
+        
+
+//         let mtime64: u64         = ((cur_mtimehi as u64) << 32) + (cur_mtimelo as u64);
+//         let cur_mtimecmp64: u64  = ((cur_mtimecmphi as u64) << 32) + (cur_mtimecmplo as u64);
+//         let mtimecmp64: u64      = mtime64 + interval;
+//         let new_mtimecmphi : u32 = (mtimecmp64 >> 32) as u32;
+//         let new_mtimecmplo : u32 = (mtimecmp64 & 0x00000000FFFFFFFF) as u32;
+
+//         // *mtimecmplo = 0xFFFFFFFF;
+//         *mtimecmplo = new_mtimecmplo;
+//         *mtimecmphi = new_mtimecmphi;
+//         println!("mtimecmp: {:X}:{:X}", *mtimecmphi, *mtimecmplo);
+
+//         // println!("old mtime:    {:X}", mtime64);
+//         // println!("cur mtime:    {:X}:{:X}", *mtimehi, *mtimelo);
+//         // println!("new mtimecmp: {:X}:{:X}", *mtimecmphi, *mtimecmplo);
+//     }
+// }

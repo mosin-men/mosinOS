@@ -4,7 +4,7 @@
  * */
 
 #[cfg(feature="qemu")]
-pub const FREQ: u32 = 65_000_000;
+pub const FREQ: u32 = 10_000_000;
 
 #[cfg(target="e31")]
 pub const FREQ: u32 = 32_500_000;
@@ -23,7 +23,5 @@ pub enum ClintRegister {
 }
 
 pub fn get_clint_register(reg : ClintRegister) -> &'static mut u32 {
-    unsafe {
-        ((CLINT_BASE + (reg as u32)) as *mut u32).as_mut().unwrap()
-    }
+    unsafe { ((CLINT_BASE + (reg as u32)) as *mut u32).as_mut().unwrap() }
 }
