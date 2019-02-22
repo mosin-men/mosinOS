@@ -3,26 +3,25 @@
  * needed. */
  /* Some of multi-line IFDEF feature would be pretty killer here. */
 
+use crate::machine_info::FREQ;
+
 #[cfg(feature="qemu")]
 mod uart_config {
-    pub static FREQ: u32 = 65_000_000;
-    pub static ADDR: u32 = 0x1001_3000;
+    pub const ADDR: u32 = 0x1001_3000;
 }
 
 #[cfg(target="e31")]
 mod uart_config {
-    static FREQ: u32 = 32_500_000;
-    static ADDR: u32 = 0x2000_0000;
+    const ADDR: u32 = 0x2000_0000;
 }
 
 #[cfg(target="hifive")]
 mod uart_config {
-    static FREQ: u32 = 17_422_745;
-    static ADDR: u32 = 0x1001_3000;
+    const ADDR: u32 = 0x1001_3000;
 }
 
-static BAUD_RATE: u32 = 115_200;
-static UART_DIVISOR: u32 = uart_config::FREQ / BAUD_RATE - 1;
+const BAUD_RATE: u32 = 115_200;
+const UART_DIVISOR: u32 = FREQ / BAUD_RATE - 1;
 
 /* Offsets for UART registers. Actual addresses can be calculated by:
    uart_config::ADDR + (<register> * 4). */
