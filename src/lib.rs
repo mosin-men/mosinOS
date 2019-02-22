@@ -58,6 +58,7 @@ pub extern fn eh_personality() {}
 #[no_mangle]
 fn abort() -> !
 {
+    println!("WE DUMB");
     loop {
       unsafe{
         asm!("wfi");
@@ -80,6 +81,8 @@ fn main() -> ! {
     console::init();
     unsafe{
       asm!("ecall");
+      asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
+      asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
     }
     loop {
         if let Some(c) = console::getc() {

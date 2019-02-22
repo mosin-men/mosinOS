@@ -64,7 +64,10 @@ fn ahandler(code: u32){
     MSOFTWARE      => println!("MACHINE MODE SOFTWARE INTERRUPT"),
     UTIMER         => println!("USER MODE TIMER INTERRUPT"),
     STIMER         => println!("SUPERVISOR MODE TIMER INTERRUPT"),
-    MTIMER         => println!("MACHINE MODE TIMER INTERRUPT"),
+    MTIMER         => { 
+      println!("MACHINE MODE TIMER INTERRUPT");
+      reset_timers();
+    },
     UEXTERNAL      => println!("USER MODE EXTERNAL INTERRUPT"),
     SEXTERNAL      => println!("SUPERVISOR MODE EXTERNAL INTERRUPT"),
     MEXTERNAL      => println!("MACHINE MODE EXTERNAL INTERRUPT"),
@@ -74,7 +77,6 @@ fn ahandler(code: u32){
 }
 
 fn shandler(code: u32){
-  println!("{}", code);
   match code {
     IADDMISS        => println!("INSTRUCTION ADDRESS MISSALIGNED"),
     IACCFAULT       => println!("INSTRUCTION ACCESS FAULT"),
@@ -97,18 +99,16 @@ fn shandler(code: u32){
 fn update_mepc(mepc: u32) -> u32{
   unsafe{
     let instruction: u32 = *(mepc as *const u32);
-    //println!("{:X}", instruction);
     match instruction & INST_MASK {
       INST_MASK => mepc + 4,
       _         => mepc + 2,
-
     }
   }
 }
 
 // # New comparand is in a1:a0.
-// li t0, -1
 // sw t0, mtimecmp   # No smaller than old value.
+// li t0, -1
 // sw a1, mtimecmp+4 # No smaller than new value.
 // sw a0, mtimecmp   # New value.
 
@@ -118,12 +118,23 @@ pub fn reset_timers() {
     let mtimecmplo : &mut u32 = get_clint_register(ClintRegister::MTIMECMPLO);
     let mtimecmphi : &mut u32 = get_clint_register(ClintRegister::MTIMECMPHI);
 
-    let interval = (FREQ / 100) as u64;
+    let cur_mtimelo: u32 = *mtimelo;
+    let cur_mtimehi: u32 = *mtimehi;
+    let cur_mtimecmplo: u32 = *mtimecmplo;
+    let cur_mtimecmphi: u32 = *mtimecmphi;
 
-    let mtime64    = ((*mtimehi as u64) << 32) + (*mtimelo as u64);
-    let mtimecmp64 = mtime64 + interval; 
 
-    *mtimecmplo = 0xFFFFFFFF;
-    *mtimecmphi = (mtimecmp64 >> 32) as u32;
-    *mtimecmplo = (mtimecmp64 & 0x00000000FFFFFFFF) as u32;
+    println!("{:X} {:X} {:X} {:X}", cur_mtimehi, cur_mtimelo, cur_mtimecmphi, cur_mtimecmplo);
+
+    let interval = (FREQ as u64) / 100;
+
+    let mtime64: u64    = ((cur_mtimehi as u64) << 32) + (cur_mtimelo as u64);
+    let cur_mtimecmp64: u64    = (((cur_mtimecmphi) as u64) << 32) + ((cur_mtimecmplo) as u64);
+    let mtimecmp64: u64 = mtime64 + interval;
+    println!("{:X}, {:X}, {}, {:X}", mtime64, cur_mtimecmp64, mtime64.wrapping_sub(cur_mtimecmp64), mtimecmp64);
+    unsafe{
+      (mtimecmplo as *mut u32).write_volatile(0xFFFFFFFF);
+      (mtimecmphi as *mut u32).write_volatile((mtimecmp64 >> 32) as u32);
+      (mtimecmplo as *mut u32).write_volatile((mtimecmp64 & 0x00000000FFFFFFFF) as u32);
+    }
 }
