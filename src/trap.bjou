@@ -4,8 +4,107 @@ module trap
 
 using import "console.bjou"
 
+const INTERRUPT_MASK := 0x80000000u32
+const CODE_MASK      := 0x7FFFFFFFu32
+
+# asynchronous traps
+const USOFTWARE := 0u32 # User software interrupt
+const SSOFTWARE := 1u32 # Supervisor software interrupt
+const MSOFTWARE := 3u32 # Machine software interrupt
+const UTIME     := 4u32 # User timer interrupt
+const STIME     := 5u32 # Supervisor timer interrupt
+const MTIME     := 7u32 # Machine timer interrupt
+const UEXT      := 8u32 # User external interrupt
+const SEXT      := 9u32 # Supervisor external interrupt
+const MEXT      := 11u32 # Machine external interrupt
+
+# synchronous traps
+const IADDMISS  := 0u32  # Instruction address misaligned
+const IACCESS   := 1u32  # Instruction access fault
+const ILLINST   := 2u32  # Illegal instruction
+const BREAKPT   := 3u32  # Breakpoint
+const LDADDMISS := 4u32  # Load address misaligned
+const LDACCESS  := 5u32  # Load access fault
+const STADDMISS := 6u32  # Store/AMO address misaligned
+const STACCESS  := 7u32  # Store/AMO access fault
+const UECALL    := 8u32  # Environment call from U-mode
+const SECALL    := 9u32  # Environment call from S-mode
+const MECALL    := 11u32 # Environment call from M-mode
+const IPGFAULT  := 12u32 # Instruction page fault
+const LDPGFAULT := 13u32 # Load page fault
+const STPGFAULT := 15u32 # Store/AMO page fault
+
 proc __no_mangle__ trap_handler(cause : u32, mepc : u32) {
     writeln("In trap handler")
     write("cause: ") writeln(cause)
     write("mepc:  ") writehexln(mepc)
+
+    interrupt := cause band INTERRUPT_MASK
+    code      := cause band CODE_MASK
+
+    if interrupt == INTERRUPT_MASK {
+        async_handler(code)
+    } else if interrupt == 0 {
+        sync_handler(code)
+    } else {
+        write("Unknown trap cause: ") writeln(cause)
+    }
+}
+
+proc async_handler(code : u32) {
+    if code == USOFTWARE  {
+        writeln("USOFTWARE")
+    } else if code == SSOFTWARE  {
+        writeln("SSOFTWARE")
+    } else if code == MSOFTWARE  {
+        writeln("MSOFTWARE")
+    } else if code == UTIME      {
+        writeln("UTIME")
+    } else if code == STIME      {
+        writeln("STIME")
+    } else if code == MTIME      {
+        writeln("MTIME")
+    } else if code == UEXT       {
+        writeln("UEXT")
+    } else if code == SEXT       {
+        writeln("SEXT")
+    } else if code == MEXT       {
+        writeln("MEXT")
+    } else {
+        writeln("Unknown asynchronous trap code")
+    }
+}
+
+proc sync_handler(code : u32) {
+    if code == IADDMISS   {
+        writeln("IADDMISS")
+    } else if code == IACCESS    {
+        writeln("IACCESS")
+    } else if code == ILLINST    {
+        writeln("ILLINST")
+    } else if code == BREAKPT    {
+        writeln("BREAKPT")
+    } else if code == LDADDMISS  {
+        writeln("LDADDMISS")
+    } else if code == LDACCESS   {
+        writeln("LDACCESS")
+    } else if code == STADDMISS  {
+        writeln("STADDMISS")
+    } else if code == STACCESS   {
+        writeln("STACCESS")
+    } else if code == UECALL     {
+        writeln("UECALL")
+    } else if code == SECALL     {
+        writeln("SECALL")
+    } else if code == MECALL     {
+        writeln("MECALL")
+    } else if code == IPGFAULT   {
+        writeln("IPGFAULT")
+    } else if code == LDPGFAULT  {
+        writeln("LDPGFAULT")
+    } else if code == STPGFAULT  {
+        writeln("STPGFAULT")
+    } else {
+        writeln("Unknown synchronous trap code")
+    }
 }
