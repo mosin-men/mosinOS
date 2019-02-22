@@ -9,9 +9,11 @@
 #[macro_export]
 macro_rules! print {
   ($($arg:tt)*) => {
-    let mut con = console::Console();
-    if let Err(_c) = write!(con, "{}", format_args!($($arg)*)){
-      //some error handling?
+    {
+      let mut con = console::Console();
+      if let Err(_c) = write!(con, "{}", format_args!($($arg)*)){
+        //some error handling?
+      }
     }
   };
 }
@@ -19,15 +21,19 @@ macro_rules! print {
 #[macro_export]
 macro_rules! println {
   () => {
-    let mut con = console::Console{};
-    if let Err(_c) = write!(con, "\r\n"){
-      //some error handling?
+    {
+      let mut con = console::Console{};
+      if let Err(_c) = write!(con, "\r\n"){
+        //some error handling?
+      }
     }
   };
   ($($arg:tt)*) => {
-    let mut con = console::Console{};
-    if let Err(_c) = write!(con, "{}\r\n", format_args!($($arg)*)){
-      //some error handling?
+    {
+      let mut con = console::Console{};
+      if let Err(_c) = write!(con, "{}\r\n", format_args!($($arg)*)){
+        //some error handling?
+      }
     }
   };
 }

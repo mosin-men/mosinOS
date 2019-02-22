@@ -39,6 +39,7 @@ _trap_handler:
   csrr a0, mcause
   csrr a1, mepc
   call trap_handler
+  csrw mepc, a0
 
 # restore t6 register 
 # and save to mscratch
@@ -56,5 +57,4 @@ _trap_handler:
 
 #restore t6 from mscratch
   csrr t6, mscratch
-  wfi
-#DO RETURN STUFF HERE
+  mret
