@@ -5,15 +5,13 @@
 module uart
 
 using import "defs.bjou"
+using import "machine_info.bjou"
 
 \static_if{ TARGET == QEMU
-    const FREQ         := 65000000u32
     const ADDR         := (0x10013000u32 as void*) }
 \static_if{ TARGET == E31
-    const FREQ         := 32500000u32
     const ADDR         := (0x20000000u32 as void*) }
 \static_if{ TARGET == HIFIVE
-    const FREQ         := 17422745u32
     const ADDR         := (0x10013000u32 as void*) }
 
 const BAUD_RATE    := 115200u32

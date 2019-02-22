@@ -1,0 +1,15 @@
+# clint.bjou
+
+module clint
+
+const CLINT_BASE := 0x02000000
+
+const MSIP       := 0x0000u32
+const MTIMECMPLO := 0x4000u32
+const MTIMECMPHI := 0x4004u32
+const MTIMELO    := 0xbff8u32
+const MTIMEHI    := 0xbffcu32
+
+proc get_clint_register(reg : u32) : u32 ref {
+    return @(((CLINT_BASE + reg) as void*) as u32*)
+}

@@ -17,9 +17,11 @@ proc __no_mangle__ main() {
     uart::configure()
     console::init()
 
+    trap::reset_timers()
+
+    asm$enable_interrupts()
+
     writeln("Hello, console.")
-    
-    asm$ecall()
 
     buff : char[256]
     cstrcpy(buff, "This is reversed.")

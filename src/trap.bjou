@@ -3,9 +3,13 @@
 module trap
 
 using import "console.bjou"
+using import "clint.bjou"
+using import "defs.bjou"
+using import "machine_info.bjou"
 
 const INTERRUPT_MASK := 0x80000000u32
 const CODE_MASK      := 0x7FFFFFFFu32
+const INST_MASK      := 0x00000003u32
 
 # asynchronous traps
 const USOFTWARE := 0u32 # User software interrupt
@@ -34,9 +38,9 @@ const IPGFAULT  := 12u32 # Instruction page fault
 const LDPGFAULT := 13u32 # Load page fault
 const STPGFAULT := 15u32 # Store/AMO page fault
 
-proc __no_mangle__ trap_handler(cause : u32, mepc : u32) {
+proc __no_mangle__ trap_handler(cause : u32, mepc : u32) : u32 {
     writeln("In trap handler")
-    write("cause: ") writeln(cause)
+    write("cause: ") writehexln(cause)
     write("mepc:  ") writehexln(mepc)
 
     interrupt := cause band INTERRUPT_MASK
@@ -44,11 +48,15 @@ proc __no_mangle__ trap_handler(cause : u32, mepc : u32) {
 
     if interrupt == INTERRUPT_MASK {
         async_handler(code)
+        return mepc
     } else if interrupt == 0 {
         sync_handler(code)
+        return update_mepc(mepc)
     } else {
         write("Unknown trap cause: ") writeln(cause)
     }
+
+    return 0
 }
 
 proc async_handler(code : u32) {
@@ -64,6 +72,7 @@ proc async_handler(code : u32) {
         writeln("STIME")
     } else if code == MTIME      {
         writeln("MTIME")
+        reset_timers()
     } else if code == UEXT       {
         writeln("UEXT")
     } else if code == SEXT       {
@@ -107,4 +116,31 @@ proc sync_handler(code : u32) {
     } else {
         writeln("Unknown synchronous trap code")
     }
+}
+
+proc update_mepc(mepc : u32) : u32 {
+    instruction := @((mepc as void*) as u32*)
+    if (instruction band INST_MASK) == INST_MASK
+        return mepc + 4
+    return mepc + 2
+}
+
+proc reset_timers() {
+    mlo    := get_clint_register(clint::MTIMELO)
+    mhi    := get_clint_register(clint::MTIMEHI)
+    mcmplo := get_clint_register(clint::MTIMECMPLO)
+    mcmphi := get_clint_register(clint::MTIMECMPHI)
+
+    cur_mlo : u32 = mlo
+    cur_mhi : u32 = mhi
+
+    interval := FREQ
+
+    mtime64 := ((cur_mhi as u64) bshl 32) + (cur_mlo as u64)
+    mtimecmp64 := mtime64 + interval
+    new_mtimecmphi := (mtimecmp64 bshr 32) as u32
+    new_mtimecmplo := (mtimecmp64 band 0x00000000FFFFFFFF) as u32
+
+    mcmplo = new_mtimecmplo
+    mcmphi = new_mtimecmphi
 }

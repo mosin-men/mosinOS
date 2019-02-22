@@ -1,0 +1,11 @@
+
+module machine_info
+
+using import "defs.bjou"
+
+\static_if{ TARGET == QEMU
+    const FREQ         := 10000000u32 }
+\static_if{ TARGET == E31
+    const FREQ         := 32500000u32 }
+\static_if{ TARGET == HIFIVE
+    const FREQ         := 17422745u32 }

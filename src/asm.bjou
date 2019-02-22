@@ -21,6 +21,8 @@ extern _wfi()
 abstract type wfi { const routine := _wfi }
 extern _ecall()
 abstract type ecall { const routine := _ecall }
+extern _enable_interrupts()
+abstract type enable_interrupts { const routine := _enable_interrupts }
 # end bindings and type wrappers
 
 
