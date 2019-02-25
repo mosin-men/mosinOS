@@ -1,23 +1,8 @@
+/* locks.rs
+   Cotains implementations for machine-mode (NO SPINNING) semaphores and
+   mutices. */
 use crate::console as console;
 use core::fmt::Write;
-
-pub struct Semaphore {
-    spins: bool,
-    count: u32,
-    max_count: u32,
-}
-
-impl Semaphore {
-    pub fn new(scount: u32, do_spin: bool) -> Semaphore {
-        let s = Semaphore{ spins: do_spin, count: scount, max_count: scount };
-        s
-    }
-
-    pub fn get(&mut self) -> bool {
-        true
-    }
-        
-}
 
 /* A machine-mode mutex structure. Does not support spinning: instead, we
    bounce off if acquisition fails to prevent indefinite hanging. */
@@ -38,6 +23,7 @@ impl Mutex {
         let addr = &mut self.val as *mut usize;
         let init: u32 = 1;
         let mut res: u32 = 0;
+        println!("Acquire addr = 0x{:X}", addr as u32);
         /* Wait, so I can use t0 in the asm itself, but I can't use it for
            input and output registers? Jesus Christ... */
         asm!("li t0, 0
@@ -64,6 +50,7 @@ impl Mutex {
        wrapper around it to minimize use of `unsafe{...}` elsewhere. */
     unsafe fn _release(&mut self) {
         let addr = &mut self.val as *mut usize;
+        println!("Release addr = 0x{:X}", addr as u32);
         asm!("li t0, 1
               amoswap.w.rl t0, t0, (a0)"    :
               :
@@ -75,7 +62,57 @@ impl Mutex {
     pub fn release(&mut self) {
         unsafe { self._release(); }
     }
+}
 
-    pub fn spin_acquire(&mut self) {
+/* The machine-mode (NO SPINNING) semaphore. I know technically the Mutex
+   should be a type of Semaphore, but making the Semaphore distinct allows its
+   count to be protected by a Mutex, which removes some potential sources of
+   race conditions. So, if you need a binary Semaphore, use Mutex instead as
+   it has less overhead associated with it. */
+pub struct Semaphore {
+    cnt: u32,
+    max_cnt: u32,
+    cnt_lock: Mutex,
+}
+
+impl Semaphore {
+    /* Create a new Semaphore. Which, of course, has its own Mutex. */
+    pub fn new(in_cnt: u32) -> Semaphore {
+        let m = Mutex::new();
+        let s = Semaphore{cnt: in_cnt, max_cnt: in_cnt, cnt_lock: m};
+        s
+    }
+
+    /* The basic premise of both of these functions is the same. Acquire the
+       count lock, modify the Semaphore's count, then release the count lock.
+       The only potential weirdness is that a multithreaded system could
+       actually fail to release a Semaphore. I think, even in machine mode, it
+       might be appropriate to spin on release since any Mutex acquisition here
+       is really tight. I'll confer with the group in the AM. In a single-
+       threaded system, I highly doubt it could make any real difference. */
+    pub fn acquire(&mut self) -> bool {
+        if self.cnt_lock.acquire() == false {
+            return false;
+        }
+
+        if self.cnt == 0 {
+            self.cnt_lock.release();
+            return false;
+        }
+
+        self.cnt -= 1;
+        self.cnt_lock.release();
+
+        true
+    }
+
+    pub fn release(&mut self) -> bool {
+        if self.cnt_lock.acquire() == false {
+            return false;
+        }
+
+        self.cnt += 1;
+        self.cnt_lock.release();
+        true
     }
 }
