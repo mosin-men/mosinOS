@@ -33,15 +33,9 @@ impl Semaphore {
             "x5", "x10"                     :
             "volatile");
 
-<<<<<<< HEAD
         if res >= self.max_count {
             self.release();
             return false;
-=======
-        match res {
-            0   => false,
-            _   => true
->>>>>>> dbc84bb45d874f2463b153ddc1b5b1c25bad5714
         }
 
         true
@@ -106,38 +100,15 @@ impl Mutex {
         m
     }
 
-<<<<<<< HEAD
     /* Thanks to the use of a Semaphore, we don't need to use any unsafe ops
        directly here and can just wrap our acquire and release functions
        around the Semaphore's equivalents. There may be some call overhead
        due to this, but I'll let the optimizer deal with that. */
-=======
-    /* The basic premise of both of these functions is the same. Acquire the
-       count lock, modify the Semaphore's count, then release the count lock.  The only potential
-       weirdness is that a multithreaded system could actually fail to release a Semaphore. I
-       think, even in machine mode, it might be appropriate to spin on release since any Mutex
-       acquisition here is really tight. In a single-threaded system, I highly doubt it could make
-       any real difference. */
->>>>>>> dbc84bb45d874f2463b153ddc1b5b1c25bad5714
     pub fn acquire(&mut self) -> bool {
         self.s.acquire()
     }
 
-<<<<<<< HEAD
     pub fn release(&mut self) {
         self.s.release();
-=======
-    pub fn release(&mut self) -> bool {
-        if self.cnt_lock.acquire() == false {
-            return false;
-        }
-
-        if self.cnt < self.max_cnt {
-            self.cnt += 1;
-        }
-
-        self.cnt_lock.release();
-        true
->>>>>>> dbc84bb45d874f2463b153ddc1b5b1c25bad5714
     }
 }
