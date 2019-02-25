@@ -42,11 +42,14 @@ macro_rules! println {
   Module Imports
 **************************************************************/
 mod console;
+mod atomics;
 mod drivers;
 mod utils;
 mod machine_info;
 mod trap;
 use core::fmt::Write;
+use crate::atomics::barrier as barrier;
+use crate::atomics::locks as locks;
 
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
@@ -75,10 +78,64 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[no_mangle]
 fn main() -> ! {
+    console::init();
+    let mut s = locks::Mutex::new();
+    println!("Mutex prepped.");
+    for i in 0..3 {
+        match s.acquire() {
+            true    =>  println!("Acquired mutex!"),
+            _       =>  println!("Mutex already held."),
+        }
+    }
+    s.release();
+    s.release();
+    s.release();
+    s.release();
+    for i in 0..3 {
+        match s.acquire() {
+            true    =>  println!("Acquired mutex!"),
+            _       =>  println!("Mutex already held."),
+        }
+    }
+
+    let mut sem = locks::Semaphore::new(3);
+    for i in 0..5 {
+        match sem.acquire() {
+            true    => println!("Acquired semaphore!"),
+            _       => println!("Semaphore maxed out."),
+        }
+    }
+    match sem.release() {
+        false   => println!("Failed to release semaphore."),
+        _       => println!("Released semaphore."),
+    }
+    for i in 0..5 {
+        match sem.acquire() {
+            true    => println!("Acquired semaphore!"),
+            _       => println!("Semaphore maxed out."),
+        }
+    }
+    sem.release();
+    sem.release();
+    for i in 0..5 {
+        match sem.acquire() {
+            true    => println!("Acquired semaphore!"),
+            _       => println!("Semaphore maxed out."),
+        }
+    }
+    sem.release();
+    sem.release();
+    sem.release();
+    for i in 0..5 {
+        match sem.acquire() {
+            true    => println!("Acquired semaphore!"),
+            _       => println!("Semaphore maxed out."),
+        }
+    }
+
     trap::reset_timers();
     /* Example of using the console to get characters,
      * then printing them back out. */
-    console::init();
     unsafe{
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
