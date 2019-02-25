@@ -88,9 +88,6 @@ fn main() -> ! {
         }
     }
     s.release();
-    s.release();
-    s.release();
-    s.release();
     for i in 0..3 {
         match s.acquire() {
             true    =>  println!("Acquired mutex!"),
@@ -105,10 +102,7 @@ fn main() -> ! {
             _       => println!("Semaphore maxed out."),
         }
     }
-    match sem.release() {
-        false   => println!("Failed to release semaphore."),
-        _       => println!("Released semaphore."),
-    }
+    sem.release();
     for i in 0..5 {
         match sem.acquire() {
             true    => println!("Acquired semaphore!"),
