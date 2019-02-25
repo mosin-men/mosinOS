@@ -35,7 +35,7 @@ impl Mutex {
 
         match res {
             0   => false,
-            _   => true,
+            _   => true
         }
     }
 
@@ -84,12 +84,11 @@ impl Semaphore {
     }
 
     /* The basic premise of both of these functions is the same. Acquire the
-       count lock, modify the Semaphore's count, then release the count lock.
-       The only potential weirdness is that a multithreaded system could
-       actually fail to release a Semaphore. I think, even in machine mode, it
-       might be appropriate to spin on release since any Mutex acquisition here
-       is really tight. I'll confer with the group in the AM. In a single-
-       threaded system, I highly doubt it could make any real difference. */
+       count lock, modify the Semaphore's count, then release the count lock.  The only potential
+       weirdness is that a multithreaded system could actually fail to release a Semaphore. I
+       think, even in machine mode, it might be appropriate to spin on release since any Mutex
+       acquisition here is really tight. In a single-threaded system, I highly doubt it could make
+       any real difference. */
     pub fn acquire(&mut self) -> bool {
         if self.cnt_lock.acquire() == false {
             return false;
@@ -111,7 +110,10 @@ impl Semaphore {
             return false;
         }
 
-        self.cnt += 1;
+        if self.cnt < self.max_cnt {
+            self.cnt += 1;
+        }
+
         self.cnt_lock.release();
         true
     }
