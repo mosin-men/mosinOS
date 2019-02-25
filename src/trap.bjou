@@ -6,6 +6,7 @@ using import "console.bjou"
 using import "clint.bjou"
 using import "defs.bjou"
 using import "machine_info.bjou"
+using import "util.bjou"
 
 const INTERRUPT_MASK := 0x80000000u32
 const CODE_MASK      := 0x7FFFFFFFu32
@@ -119,7 +120,7 @@ proc sync_handler(code : u32) {
 }
 
 proc update_mepc(mepc : u32) : u32 {
-    instruction := @((mepc as void*) as u32*)
+    instruction := @u32toptr$u32(mepc)
     if (instruction band INST_MASK) == INST_MASK
         return mepc + 4
     return mepc + 2

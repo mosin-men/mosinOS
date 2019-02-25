@@ -2,6 +2,8 @@
 
 module clint
 
+using import "util.bjou"
+
 const CLINT_BASE := 0x02000000
 
 const MSIP       := 0x0000u32
@@ -10,6 +12,5 @@ const MTIMECMPHI := 0x4004u32
 const MTIMELO    := 0xbff8u32
 const MTIMEHI    := 0xbffcu32
 
-proc get_clint_register(reg : u32) : u32 ref {
-    return @(((CLINT_BASE + reg) as void*) as u32*)
-}
+proc get_clint_register(reg : u32) : u32 ref
+    return @u32toptr$u32(CLINT_BASE + reg)
