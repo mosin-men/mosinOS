@@ -58,12 +58,27 @@ impl Semaphore {
        called in the failure branch of `acquire()`. */
     unsafe fn _release(&mut self) {
         let addr = &mut self.count as *mut u32;
+        let one: i32 = 1;
         let neg_one: i32 = -1;
+        let mut res: i32;
         asm!("amoadd.w.rl t0, t0, (a0)"     :
-             :
+             "={x5}"(res)                   :
              "{x5}"(neg_one), "{x10}"(addr) :
              "x5", "x10"                    :
              "volatile");
+
+        /* Technically, you should never explicitly release a lock you don't
+           hold. However, since `release()` is a public function, people can
+           do it, and you know they will. The following code protects against
+           that by re-incrementing the lock variable if it goes out of bounds
+           on a release. */
+        if res <= 0 {
+            asm!("amoadd.w.aqrl t0, t0, (a0)"   :
+                 :
+                 "{x5}"(one), "{x10}"(addr)     :
+                 "x5", "x10"                    :
+                 "volatile");
+        }
     }
 
     /* Safe wrapper around above function */

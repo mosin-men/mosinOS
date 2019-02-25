@@ -88,6 +88,10 @@ fn main() -> ! {
         }
     }
     s.release();
+    s.release();
+    s.release();
+    s.release();
+    s.release();
     for i in 0..3 {
         match s.acquire() {
             true    =>  println!("Acquired mutex!"),
