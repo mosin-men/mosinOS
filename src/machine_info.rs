@@ -15,7 +15,7 @@ pub const FREQ: u32 = 17_422_745;
 pub const CLINT_BASE : u32 = 0x0200_0000;
 
 pub enum ClintRegister {
-    MSIP       = 0x0000,
+    _MSIP       = 0x0000,
     MTIMECMPLO = 0x4000,
     MTIMECMPHI = 0x4004,
     MTIMELO    = 0xbff8,

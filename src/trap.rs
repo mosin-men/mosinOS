@@ -112,10 +112,8 @@ pub fn reset_timers() {
 
     let cur_mtimelo    : u32      = *mtimelo;
     let cur_mtimehi    : u32      = *mtimehi;
-    let cur_mtimecmplo : u32      = *mtimecmplo;
-    let cur_mtimecmphi : u32      = *mtimecmphi;
 
-    let interval = (FREQ as u64);
+    let interval = (FREQ as u64) / 1;
 
     let mtime64        : u64 = ((cur_mtimehi as u64) << 32) + (cur_mtimelo as u64);
     let mtimecmp64     : u64 = mtime64 + interval;

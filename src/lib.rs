@@ -80,7 +80,6 @@ fn main() -> ! {
      * then printing them back out. */
     console::init();
     unsafe{
-      asm!("ecall");
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
     }
