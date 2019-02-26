@@ -23,6 +23,12 @@ extern _ecall()
 abstract type ecall { const routine := _ecall }
 extern _enable_interrupts()
 abstract type enable_interrupts { const routine := _enable_interrupts }
+extern _semaphore_inc()
+abstract type semaphore_inc { const routine := _semaphore_inc }
+extern _semaphore_dec()
+abstract type semaphore_dec { const routine := _semaphore_dec }
+extern _fence()
+abstract type fence { const routine := _fence }
 # end bindings and type wrappers
 
 

@@ -1,0 +1,67 @@
+# atomics/locks.bjou
+#
+# Contains implementations for machine-mode (NO-SPINNING) semaphores
+# and mutices.
+
+module locks
+
+using import "asm.bjou"
+
+type semaphore {
+    count     : u32
+    max_count : u32
+
+    proc create(max : u32) : semaphore {
+        return { semaphore: .count = 0, .max_count = max }
+    }
+
+	# Acquisition function. Use atomic memory operations to increment
+    # the semaphore's count. If the count exceeds the max, there's no room
+    # for this acquisition. Decrement the count (okay, just call release())
+    # and fail in that case, otherwsie we have obtained the lock.
+    proc acquire(this) : bool {
+        result := asm$semaphore_inc(ptr_to_u32(&(this.count)))
+
+        if result >= this.max_count {
+            this.release()
+            return false
+        }
+
+        return true
+    }
+
+    # Release one holder of the semaphore. This uses atomic memory ops to
+    # decrement the semaphore's count, increasing the number of available
+    # slots by one (or restoring it to the pre-attempt value if this is
+    # called in the failure branch of `acquire()`.
+    proc release(this) {
+        count_addr := ptr_to_u32(&(this.count))
+
+        result := asm$semaphore_dec(count_addr) as i32
+
+        # Technically, you should never explicitly release a lock you don't
+        # hold. However, since `release()` is a public function, people can
+        # do it, and you know they will. The following code protects against
+        # that by re-incrementing the lock variable if it goes out of bounds
+        # on a release.
+        if result <= 0 {
+            asm$semaphore_inc(count_addr)
+        }
+    }
+}
+
+# A mutex, which I'm simplifying by just hard-coding a Semaphore with a count
+# of one.
+type mutex {
+    s : semaphore
+
+    proc create() : mutex {
+        return { mutex: .s = semaphore.create(1) }
+    }
+
+    proc acquire(this) : bool
+        return this.s.acquire()
+
+    proc release(this)
+        this.s.release()
+}

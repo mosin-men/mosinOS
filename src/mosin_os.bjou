@@ -12,29 +12,13 @@ import "trap.bjou"
 import "uart.bjou"
 using import "console.bjou"
 using import "asm.bjou"
+using import "atomics/locks.bjou"
 
 proc __no_mangle__ main() {
     uart::configure()
     console::init()
-
     trap::reset_timers()
-
     asm$enable_interrupts()
 
-    writeln("Hello, console.")
-
-    buff : char[256]
-    cstrcpy(buff, "This is reversed.")
-    cstrrev(buff)
-    writeln(buff)
-    writeln(-12345)
-    write("Give me a string: ")
-    readln(buff)
-    write("You typed '")
-    write(buff)
-    writeln("'")
-
-    write("Now echoing... ")
-
-    while true    uart::read_echo()
+    while true    asm$wfi()
 }

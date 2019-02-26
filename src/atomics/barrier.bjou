@@ -1,0 +1,29 @@
+# atomics/barrier.bjou
+#
+
+module barrier
+
+using import "asm.bjou"
+
+# The barrier structure, used for ordering. When a barrier is created, you're 
+# expecting <n> processes to wait at the barrier. They'll have to sleep or
+# spin or whatever, but that's what it's for.
+type barrier {
+    total : u32
+    count : u32
+
+    proc create(count : u32) : barrier {
+        return { barrier: .total = 0, .count = count }
+    }
+
+    proc wait(this) {
+        asm$fence()
+        this.count += 1
+        # Process will actually sleep here, when we have them.
+    }
+
+    proc check(this) : bool {
+        asm$fence()
+        return (this.count == this.total)
+    }
+}
