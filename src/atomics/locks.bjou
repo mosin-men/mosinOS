@@ -15,7 +15,7 @@ type semaphore {
         return { semaphore: .count = 0, .max_count = max }
     }
 
-	# Acquisition function. Use atomic memory operations to increment
+    # Acquisition function. Use atomic memory operations to increment
     # the semaphore's count. If the count exceeds the max, there's no room
     # for this acquisition. Decrement the count (okay, just call release())
     # and fail in that case, otherwsie we have obtained the lock.
