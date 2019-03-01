@@ -1,5 +1,6 @@
 /target
 **/*.rs.bk
 Cargo.lock
+notes.md
 mosin_os.elf
 asm/*.o
