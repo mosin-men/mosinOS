@@ -1,5 +1,5 @@
 # Urgent
-  check to see if we can ecall from User mode (Done -Chad)
+  ~~check to see if we can ecall from User mode~~ (Done -Chad)
 # Lab 5 - Due 3/8 6pm
 ## Memory Manager
   Kalloc
