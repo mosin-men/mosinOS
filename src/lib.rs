@@ -78,62 +78,11 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[no_mangle]
 fn main() -> ! {
+
+    /* Initialize */
     console::init();
-    let mut s = locks::Mutex::new();
-    println!("Mutex prepped.");
-    for i in 0..3 {
-        match s.acquire() {
-            true    =>  println!("Acquired mutex!"),
-            _       =>  println!("Mutex already held."),
-        }
-    }
-    s.release();
-    s.release();
-    s.release();
-    s.release();
-    for i in 0..3 {
-        match s.acquire() {
-            true    =>  println!("Acquired mutex!"),
-            _       =>  println!("Mutex already held."),
-        }
-    }
-
-    let mut sem = locks::Semaphore::new(3);
-    for i in 0..5 {
-        match sem.acquire() {
-            true    => println!("Acquired semaphore!"),
-            _       => println!("Semaphore maxed out."),
-        }
-    }
-    match sem.release() {
-        false   => println!("Failed to release semaphore."),
-        _       => println!("Released semaphore."),
-    }
-    for i in 0..5 {
-        match sem.acquire() {
-            true    => println!("Acquired semaphore!"),
-            _       => println!("Semaphore maxed out."),
-        }
-    }
-    sem.release();
-    sem.release();
-    for i in 0..5 {
-        match sem.acquire() {
-            true    => println!("Acquired semaphore!"),
-            _       => println!("Semaphore maxed out."),
-        }
-    }
-    sem.release();
-    sem.release();
-    sem.release();
-    for i in 0..5 {
-        match sem.acquire() {
-            true    => println!("Acquired semaphore!"),
-            _       => println!("Semaphore maxed out."),
-        }
-    }
-
     trap::reset_timers();
+
     /* Example of using the console to get characters,
      * then printing them back out. */
     unsafe{

@@ -4,115 +4,111 @@
 use crate::console as console;
 use core::fmt::Write;
 
-/* A machine-mode mutex structure. Does not support spinning: instead, we
-   bounce off if acquisition fails to prevent indefinite hanging. */
-pub struct Mutex {
-    val: usize,
+/* The semaphore structure. */
+pub struct Semaphore {
+    count: u32,
+    max_count: u32,
 }
 
-impl Mutex {
-    pub fn new() -> Mutex {
-        let m = Mutex{ val: 1 };
-        m
+impl Semaphore {
+    /* Create a new semaphore */
+    pub fn new(cnt: u32) -> Semaphore {
+        let s = Semaphore{ count: 0, max_count: cnt };
+        s
     }
 
-    /* The meat of the acquisition function. Attempt to acquire the lock by
-       setting its value to zero (decrement it, semaphore-style). If that
-       fails, bail out. Otherwise, we have the lock. */
+    /* Unsafe acquisition function. Use atomic memory operations to increment
+       the semaphore's count. If the count exceeds the max, there's no room
+       for this acquisition. Decrement the count (okay, just call release())
+       and fail in that case, otherwsie we have obtained the lock. */
+    /* Canonically this should be called wait(), but since we're not spinning
+       I don't really want to use that term. */
     unsafe fn _acquire(&mut self) -> bool {
-        let addr = &mut self.val as *mut usize;
-        let init: u32 = 1;
+        let addr = &mut self.count as *mut u32;
+        let one: i32 = 1;
         let mut res: u32 = 0;
-        println!("Acquire addr = 0x{:X}", addr as u32);
-        /* Wait, so I can use t0 in the asm itself, but I can't use it for
-           input and output registers? Jesus Christ... */
-        asm!("li t0, 0
-              amoswap.w.aq t0, t0, (a0)"    :
+        asm!("amoadd.w.aq t0, t0, (a0)"     :
+            "={x5}"(res)                    :
+            "{x5}"(one), "{x10}"(addr)      :
+            "x5", "x10"                     :
+            "volatile");
+
+        if res >= self.max_count {
+            self.release();
+            return false;
+        }
+
+        true
+    }
+
+    /* A safe wrapper around the unsafe function above. This isn't really
+       needed, but it minimizes the need to use `unsafe{...}` elsewhere. */
+    pub fn acquire(&mut self) -> bool {
+        let rv: bool;
+        unsafe {
+            rv = self._acquire();
+        }
+
+        rv
+    }
+
+    /* Release one holder of the semaphore. This uses atomic memory ops to
+       decrement the semaphore's count, increasing the number of available
+       slots by one (or restoring it to the pre-attempt value if this is
+       called in the failure branch of `acquire()`. */
+    unsafe fn _release(&mut self) {
+        let addr = &mut self.count as *mut u32;
+        let one: i32 = 1;
+        let neg_one: i32 = -1;
+        let mut res: i32;
+        asm!("amoadd.w.rl t0, t0, (a0)"     :
              "={x5}"(res)                   :
-             "{x10}"(addr)                  :
-             "x5"                           :
+             "{x5}"(neg_one), "{x10}"(addr) :
+             "x5", "x10"                    :
              "volatile");
 
-        match res {
-            0   => false,
-            _   => true,
+        /* Technically, you should never explicitly release a lock you don't
+           hold. However, since `release()` is a public function, people can
+           do it, and you know they will. The following code protects against
+           that by re-incrementing the lock variable if it goes out of bounds
+           on a release. */
+        if res <= 0 {
+            asm!("amoadd.w.aqrl t0, t0, (a0)"   :
+                 :
+                 "{x5}"(one), "{x10}"(addr)     :
+                 "x5", "x10"                    :
+                 "volatile");
         }
     }
 
-    /* A wrapper around _acquire so we don't need an `unsafe {...}` block
-       every time we want to get a lock. */
-    pub fn acquire(&mut self) -> bool {
-        unsafe { self._acquire() }
-    }
-
-    /* Restore the mutex to its unlocked value (1).
-       Like with acquire and _acquire, we have the unsafe fn and a safe
-       wrapper around it to minimize use of `unsafe{...}` elsewhere. */
-    unsafe fn _release(&mut self) {
-        let addr = &mut self.val as *mut usize;
-        println!("Release addr = 0x{:X}", addr as u32);
-        asm!("li t0, 1
-              amoswap.w.rl t0, t0, (a0)"    :
-              :
-              "{x10}"(addr)                 :
-              "x5"                          :
-              "volatile");
-    }
-
+    /* Safe wrapper around above function */
     pub fn release(&mut self) {
         unsafe { self._release(); }
     }
 }
 
-/* The machine-mode (NO SPINNING) semaphore. I know technically the Mutex
-   should be a type of Semaphore, but making the Semaphore distinct allows its
-   count to be protected by a Mutex, which removes some potential sources of
-   race conditions. So, if you need a binary Semaphore, use Mutex instead as
-   it has less overhead associated with it. */
-pub struct Semaphore {
-    cnt: u32,
-    max_cnt: u32,
-    cnt_lock: Mutex,
+/* A mutex, which I'm simplifying by just hard-coding a Semaphore with a count
+   of one. */
+pub struct Mutex {
+    s: Semaphore,
 }
 
-impl Semaphore {
-    /* Create a new Semaphore. Which, of course, has its own Mutex. */
-    pub fn new(in_cnt: u32) -> Semaphore {
-        let m = Mutex::new();
-        let s = Semaphore{cnt: in_cnt, max_cnt: in_cnt, cnt_lock: m};
-        s
+impl Mutex {
+    pub fn new() -> Mutex {
+        let sem = Semaphore::new(1);
+        let m = Mutex{ s: sem };
+        m
     }
 
-    /* The basic premise of both of these functions is the same. Acquire the
-       count lock, modify the Semaphore's count, then release the count lock.
-       The only potential weirdness is that a multithreaded system could
-       actually fail to release a Semaphore. I think, even in machine mode, it
-       might be appropriate to spin on release since any Mutex acquisition here
-       is really tight. I'll confer with the group in the AM. In a single-
-       threaded system, I highly doubt it could make any real difference. */
+    /* Thanks to the use of a Semaphore, we don't need to use any unsafe ops
+       directly here and can just wrap our acquire and release functions
+       around the Semaphore's equivalents. There may be some call overhead
+       due to this, but I'll let the optimizer deal with that. */
     pub fn acquire(&mut self) -> bool {
-        if self.cnt_lock.acquire() == false {
-            return false;
-        }
-
-        if self.cnt == 0 {
-            self.cnt_lock.release();
-            return false;
-        }
-
-        self.cnt -= 1;
-        self.cnt_lock.release();
-
-        true
+        self.s.acquire()
     }
 
-    pub fn release(&mut self) -> bool {
-        if self.cnt_lock.acquire() == false {
-            return false;
-        }
-
-        self.cnt += 1;
-        self.cnt_lock.release();
-        true
+    pub fn release(&mut self) {
+        self.s.release();
     }
 }
