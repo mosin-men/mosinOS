@@ -1,9 +1,10 @@
 use crate::console as console;
 use crate::machine_info::{*};
 use core::fmt::Write;
+use crate::syscalls as syscalls;
 
 extern "C" {
-//  static GLOBAL_CTX: *mut usize;
+  static GLOBAL_CTX: [u32; 32];
 }
 
 const  INTERRUPT: u32 = 0x80000000;
@@ -57,40 +58,51 @@ fn trap_handler(cause: u32, mepc: u32) -> u32{
 
 fn ahandler(code: u32){
   match code {
-    USOFTWARE      => println!("USER MODE SOFTWARE INTERRUPT"),
-    SSOFTWARE      => println!("SUPERVISOR MODE SOFTWARE INTERRUPT"),
-    MSOFTWARE      => println!("MACHINE MODE SOFTWARE INTERRUPT"),
-    UTIMER         => println!("USER MODE TIMER INTERRUPT"),
-    STIMER         => println!("SUPERVISOR MODE TIMER INTERRUPT"),
-    MTIMER         => { 
+    USOFTWARE => println!("USER MODE SOFTWARE INTERRUPT"),
+    SSOFTWARE => println!("SUPERVISOR MODE SOFTWARE INTERRUPT"),
+    MSOFTWARE => println!("MACHINE MODE SOFTWARE INTERRUPT"),
+    UTIMER    => println!("USER MODE TIMER INTERRUPT"),
+    STIMER    => println!("SUPERVISOR MODE TIMER INTERRUPT"),
+    MTIMER    => {
       println!("MACHINE MODE TIMER INTERRUPT");
       reset_timers();
     },
-    UEXTERNAL      => println!("USER MODE EXTERNAL INTERRUPT"),
-    SEXTERNAL      => println!("SUPERVISOR MODE EXTERNAL INTERRUPT"),
-    MEXTERNAL      => println!("MACHINE MODE EXTERNAL INTERRUPT"),
-    _              => println!("UKNOWN ASYNCRONOUS INTERRUPT CODE"),
+    UEXTERNAL => println!("USER MODE EXTERNAL INTERRUPT"),
+    SEXTERNAL => println!("SUPERVISOR MODE EXTERNAL INTERRUPT"),
+    MEXTERNAL => println!("MACHINE MODE EXTERNAL INTERRUPT"),
+    _         => println!("UKNOWN ASYNCRONOUS INTERRUPT CODE"),
   }
   
 }
 
 fn shandler(code: u32){
   match code {
-    IADDMISS        => println!("INSTRUCTION ADDRESS MISSALIGNED"),
-    IACCFAULT       => println!("INSTRUCTION ACCESS FAULT"),
-    ILLINS          => println!("ILLEGAL INSTRUCTION"),
-    BREAK           => println!("BREAK"),
-    LADDMISS        => println!("LOAD ADDRESS MISSALIGNED"),
-    LACCFAULT       => println!("LOAD ACCESS FAULT"),
-    SADDMISS        => println!("STORE ADDRESS MISSALIGNED"),
-    SACCFAULT       => println!("STORE ACCESS FAULT"),
-    UECALL          => println!("USER MODE ECALL"),
-    SECALL          => println!("SUPERVISOR MODE ECALL"),
-    MECALL          => println!("MACHINE MODE ECALL"),
-    IPAGEFAULT      => println!("INSTRUCTION PAGE FAULT"),
-    LPAGEFAULT      => println!("LOAD PAGE FAULT"),
-    SPAGEFAULT      => println!("STORE PAGE FAULT"),
-    _               => println!("UNKNOWN SYNCRONOUS TRAP CODE"),
+    IADDMISS   => println!("INSTRUCTION ADDRESS MISSALIGNED"),
+    IACCFAULT  => println!("INSTRUCTION ACCESS FAULT"),
+    ILLINS     => println!("ILLEGAL INSTRUCTION"),
+    BREAK      => println!("BREAK"),
+    LADDMISS   => println!("LOAD ADDRESS MISSALIGNED"),
+    LACCFAULT  => println!("LOAD ACCESS FAULT"),
+    SADDMISS   => println!("STORE ADDRESS MISSALIGNED"),
+    SACCFAULT  => println!("STORE ACCESS FAULT"),
+    UECALL     => 
+    {
+        println!("USER MODE ECALL");
+        unsafe{
+            syscalls::Do_SysCall(GLOBAL_CTX[10]);
+        }
+    }
+    SECALL     => println!("SUPERVISOR MODE ECALL"),
+    MECALL     => 
+    {
+        unsafe{
+        syscalls::Do_MSysCall(GLOBAL_CTX[10]);
+        }
+    },
+    IPAGEFAULT => println!("INSTRUCTION PAGE FAULT"),
+    LPAGEFAULT => println!("LOAD PAGE FAULT"),
+    SPAGEFAULT => println!("STORE PAGE FAULT"),
+    _          => println!("UNKNOWN SYNCRONOUS TRAP CODE"),
   }
 }
 

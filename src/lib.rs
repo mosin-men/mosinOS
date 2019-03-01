@@ -47,9 +47,11 @@ mod drivers;
 mod utils;
 mod machine_info;
 mod trap;
+mod syscalls;
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
+
 
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
@@ -66,6 +68,18 @@ fn abort() -> !
       unsafe{
         asm!("wfi");
       }
+    }
+}
+
+fn syscall(code: u32){
+    unsafe {
+        asm!("ecall");
+    }
+}
+
+fn msyscall(code: u32){
+    unsafe {
+        asm!("ecall");
     }
 }
 
@@ -89,6 +103,9 @@ fn main() -> ! {
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
     }
+    msyscall(0);
+    syscall(1);
+
     loop {
         if let Some(c) = console::getc() {
             println!("Got a character: {}", c);

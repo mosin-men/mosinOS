@@ -41,6 +41,9 @@ gdb: $(OUT)
 	#$(QEMU) $(QEMUARGS) -S -s &
 	$(GDB) $(OUT) -ex "target remote localhost:1234"
 
+qgdb: $(OUT)
+	$(QEMU) $(QEMUARGS) -S -s
+
 .PHONY: clean
 
 clean: 
