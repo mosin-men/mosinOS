@@ -1,4 +1,4 @@
-#![feature(panic_info_message,allocator_api,asm,lang_items,compiler_builtins_lib)]
+#![feature(panic_info_message,allocator_api,asm,lang_items,compiler_builtins_lib,const_raw_ptr_to_usize_cast)]
 //We are not permitted to use the standard library since it isn't written for our operating system
 #![no_std]
 
@@ -48,11 +48,10 @@ mod utils;
 mod machine_info;
 mod trap;
 mod syscalls;
+mod mem;
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
-
-
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -91,25 +90,31 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 }
 
 #[no_mangle]
-fn main() -> ! {
+fn main() -> () {
 
     /* Initialize */
     console::init();
     trap::reset_timers();
 
-    /* Example of using the console to get characters,
-     * then printing them back out. */
+    /* Turns on timer interrupts */
     unsafe{
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
     }
-    msyscall(0);
-    syscall(1);
 
-    loop {
-        if let Some(c) = console::getc() {
-            println!("Got a character: {}", c);
-        }
-    };
+    /* Initialize the heap */
+    mem::heap::heap_init();
+
+    /* Our whole heap is 14,208 bytes. This allocation requires
+     * 14,204 bytes, which should mean that no further allocations are
+     * possible.
+     */
+    println!("{:p}", mem::heap::allocate(14200));
+    println!("{:p}", mem::heap::allocate(4));
+    println!("{:p}", mem::heap::allocate(4));
+    println!("{:p}", mem::heap::allocate(4));
+
+    /* Hold the OS here */
+    loop{}
 }
 
