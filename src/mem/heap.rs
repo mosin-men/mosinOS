@@ -25,7 +25,7 @@ extern "C" {
 /* Freelist header. Needs to be 4 bytes (to keep the heap aligned properly).  We could make this a
  * smaller value, and align the heap another way. */
 #[repr(C)]
-struct FreeNode {
+pub struct FreeNode {
     taken: u16, /* 0 means not taken, any other value means taken */
     size: u16 /* size in bytes */
 }
