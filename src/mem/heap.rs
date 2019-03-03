@@ -19,7 +19,7 @@ use core::fmt::Write;
 extern "C" {
     pub static mut __heap_start: FreeNode;
     pub static mut __heap_end: FreeNode;
-    pub static __heap_size: u32;
+    pub static __heap_size: u16;
 }
 
 /* Freelist header. Needs to be 4 bytes (to keep the heap aligned properly).  We could make this a
@@ -34,61 +34,114 @@ pub struct FreeNode {
  * at `__heap_start`. */
 pub fn heap_init() -> () {
     unsafe {
+        let heap_size: u16 = &__heap_size as *const _ as u16;
+        println!("Heap size: {}", heap_size);
         let mem: *mut FreeNode = &mut __heap_start as *mut FreeNode;
         let node = FreeNode {
             taken: 0,
-            size: 0
+            size: heap_size
         };
         println!("Initializing heap at {:p}, size: {:p}", mem, &__heap_size);
         mem.offset(0).write(node);
     }
 }
 
-pub fn allocate(mut size: u16) -> *mut u16 {
+/* Returns either:
+ *   1. A pointer to a 4-byte-aligned region of memory at least as large as you requested.
+ *   2. A NULL pointer, if the heap has no room.
+ */
+pub fn kmalloc(mut size: u16) -> *mut u16 {
+    /* No allocation if no size */
+    if size == 0 {
+        return 0 as *mut u16;
+    }
+
+    /* Get size to be a multiple of 4 */
+    let rem: u16 = size % 4;
+    if rem != 0 {
+        size = size + (4 - rem);
+    }
+
     unsafe {
-        /* No allocation if no size */
-        if size == 0 {
-            return 0 as *mut u16;
-        }
-
-        /* Get size to be a multiple of 4 */
-        let rem: u16 = size % 4;
-        if rem != 0 {
-            size = size + (4 - rem);
-        }
-
         /* Pointer to the start of our heap. */
-        let mem: *mut FreeNode = &mut __heap_start as *mut FreeNode;
+        let start: *mut FreeNode = &mut __heap_start as *mut FreeNode;
         /* Used to offset the above pointer into the heap */
         let mut offset: isize = 0;
         /* Pointer to the end of the heap */
         let end: *mut FreeNode = &mut __heap_end as *mut FreeNode;
+        let blocksize: u16;
+
+        /* Loop until we find a free block that's big enough */
+        loop {
+            println!("Looking at a FreeNode: {} {}", start.offset(offset).read().taken, start.offset(offset).read().size);
+            if start.offset(offset) >= end {
+                /* We've hit the end of the heap */
+                println!("Failed to allocate.");
+                return 0 as *mut u16;
+            }
+            if (start.offset(offset).read().taken == 0) && (start.offset(offset).read().size >= size) {
+                /* We found a block that's:
+                 *   1. Not taken
+                 *   2. Large enough
+                 */
+                println!("Found: {} {}", start.offset(offset).read().taken, start.offset(offset).read().size);
+                break;
+            }
+            offset += ((start.offset(offset).read().size as isize) / 4) + 1;
+        }
+
+        /* The size of the block that we've chosen to take from */
+        blocksize = start.offset(offset).read().size;
+
+        /* If there will only be 4 bytes left, just give it away */
+        if blocksize == (size + 4) {
+            size += 4;
+        }
+        
+        /* Initialize the next block in the freelist, before the current block is overwritten. */
+        /* Only do this if we're not consuming the entire block. */
+        if(blocksize > size) {
+            let nextnode = FreeNode {
+                taken: 0,
+                size: blocksize - size
+            };
+            start.offset(offset + ((size / 4) as isize) + 1).write(nextnode);
+        }
+
         /* We write this into memory to do the allocation */
         let node = FreeNode {
             taken: 1,
             size: size
         };
-
-        /* Loop until we find a free block */
-        while (mem.offset(offset).read().taken != 0) && (mem.offset(offset) < end) {
-            offset += ((mem.offset(offset).read().size as isize) / 4) + 1;
-        }
-
-        /* Return NULL if we're at the end of the heap */
-        if mem.offset(offset) >= end {
-            return 0 as *mut u16;
-        }
-
-        /* Return NULL if we don't have enough bytes to fulfill the allocation */
-        let diff: u16 = (end as u16) - (mem.offset(offset) as u16);
-        if ((size) + 4) > diff {
-            return 0 as *mut u16;
-        }
-
-        /* Grab the allocation */
-        mem.offset(offset).write(node);
+        start.offset(offset).write(node);
 
         /* Return the pointer to the allocation */
-        mem.offset(offset + 1) as *mut u16
+        println!("Allocation succeeding at {:p} for {} bytes.", start.offset(offset + 1) as *mut u16, size);
+        start.offset(offset + 1) as *mut u16
+    }
+}
+
+/* Frees the pointer that you give it. */
+pub fn kfree(ptr: *mut u16) -> () {
+    unsafe {
+        /* Pointer to the start of our heap. */
+        let start: *mut FreeNode = &mut __heap_start as *mut FreeNode;
+        /* Used to offset the above pointer into the heap */
+        let mut offset: isize = 0;
+        /* Pointer to the end of the heap */
+        let end: *mut FreeNode = &mut __heap_end as *mut FreeNode;
+
+        /* Sanity checks */
+        if (ptr < (start as *mut u16)) || (ptr > (end as *mut u16)) {
+            println!("Pointer was invalid: {:p}", ptr);
+        }
+
+        /* We'll write this to memory to free up a block */
+        println!("Freeing allocation which was for {} bytes.", (ptr as *mut FreeNode).offset(-1).read().size);
+        let node = FreeNode {
+            taken: 0,
+            size: (ptr as *mut FreeNode).offset(-1).read().size
+        };
+        (ptr as *mut FreeNode).offset(-1).write(node);
     }
 }

@@ -103,17 +103,20 @@ fn main() -> () {
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
     }
 
-    /* Initialize the heap */
     mem::heap::heap_init();
-
-    /* Our whole heap is 14,208 bytes. This allocation requires
-     * 14,204 bytes, which should mean that no further allocations are
-     * possible.
-     */
-    println!("{:p}", mem::heap::allocate(14200));
-    println!("{:p}", mem::heap::allocate(2));
-    println!("{:p}", mem::heap::allocate(61));
-    println!("{:p}", mem::heap::allocate(0));
+    let ptr: *mut u16 = mem::heap::kmalloc(2);
+    let ptr2: *mut u16 = mem::heap::kmalloc(62);
+    mem::heap::kfree(ptr);
+    mem::heap::kfree(ptr2);
+    let ptr3: *mut u16 = mem::heap::kmalloc(63);
+    let ptr4: *mut u16 = mem::heap::kmalloc(63);
+    let ptr5: *mut u16 = mem::heap::kmalloc(63);
+    let ptr6: *mut u16 = mem::heap::kmalloc(63);
+    let ptr7: *mut u16 = mem::heap::kmalloc(63);
+    let ptr8: *mut u16 = mem::heap::kmalloc(63);
+    let ptr9: *mut u16 = mem::heap::kmalloc(63);
+    let ptr10: *mut u16 = mem::heap::kmalloc(63);
+    mem::heap::kfree(ptr3);
 
     /* Hold the OS here */
     loop{}
