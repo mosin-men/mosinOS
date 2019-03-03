@@ -21,7 +21,7 @@ const BARRIER:  u32 = 6;
 const UMODE:    u32 = 0;
 const MMODE:    u32 = 3;
 
-pub fn Do_MSysCall (code: u32) {
+pub fn do_msyscall (code: u32) {
     match code {
         UMODE => unsafe {_UMODE_SWITCH();},
         MMODE => unsafe {_MMODE_SWITCH();},
@@ -30,7 +30,7 @@ pub fn Do_MSysCall (code: u32) {
 }
 
 
-pub fn Do_SysCall (code: u32) {
+pub fn do_syscall (code: u32) {
     match code {
         EXIT    => println!("SYSCALL EXIT"),
         WRITE   => println!("SYSCALL WRITE"),

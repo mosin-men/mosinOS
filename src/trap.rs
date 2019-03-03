@@ -89,14 +89,14 @@ fn shandler(code: u32){
     {
         println!("USER MODE ECALL");
         unsafe{
-            syscalls::Do_SysCall(GLOBAL_CTX[10]);
+            syscalls::do_syscall(GLOBAL_CTX[10]);
         }
     }
     SECALL     => println!("SUPERVISOR MODE ECALL"),
     MECALL     => 
     {
         unsafe{
-        syscalls::Do_MSysCall(GLOBAL_CTX[10]);
+        syscalls::do_msyscall(GLOBAL_CTX[10]);
         }
     },
     IPAGEFAULT => println!("INSTRUCTION PAGE FAULT"),

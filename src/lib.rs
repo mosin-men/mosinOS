@@ -1,3 +1,4 @@
+#![allow(warnings)]
 #![feature(panic_info_message,allocator_api,asm,lang_items,compiler_builtins_lib,const_raw_ptr_to_usize_cast)]
 //We are not permitted to use the standard library since it isn't written for our operating system
 #![no_std]
