@@ -44,14 +44,26 @@ pub fn heap_init() -> () {
     }
 }
 
-pub fn allocate(size: u16) -> *mut u16 {
+pub fn allocate(mut size: u16) -> *mut u16 {
     unsafe {
-        /* Get size to be a multiple of 4 */
-        /* TODO */
+        /* No allocation if no size */
+        if size == 0 {
+            return 0 as *mut u16;
+        }
 
-        let mem: *mut FreeNode = &mut __heap_start as *mut FreeNode; /* Pointer into memory we're using for the heap */
-        let mut offset: isize = 0; /* Offsets into the heap */
-        let end: *mut FreeNode = &mut __heap_end as *mut FreeNode; /* Used to check if we've reached the end of the heap */
+        /* Get size to be a multiple of 4 */
+        let rem: u16 = size % 4;
+        if rem != 0 {
+            size = size + (4 - rem);
+        }
+
+        /* Pointer to the start of our heap. */
+        let mem: *mut FreeNode = &mut __heap_start as *mut FreeNode;
+        /* Used to offset the above pointer into the heap */
+        let mut offset: isize = 0;
+        /* Pointer to the end of the heap */
+        let end: *mut FreeNode = &mut __heap_end as *mut FreeNode;
+        /* We write this into memory to do the allocation */
         let node = FreeNode {
             taken: 1,
             size: size
@@ -62,17 +74,21 @@ pub fn allocate(size: u16) -> *mut u16 {
             offset += ((mem.offset(offset).read().size as isize) / 4) + 1;
         }
 
+        /* Return NULL if we're at the end of the heap */
         if mem.offset(offset) >= end {
             return 0 as *mut u16;
         }
 
+        /* Return NULL if we don't have enough bytes to fulfill the allocation */
         let diff: u16 = (end as u16) - (mem.offset(offset) as u16);
         if ((size) + 4) > diff {
             return 0 as *mut u16;
         }
 
-        /* We found a free block. Mark it as taken. */
+        /* Grab the allocation */
         mem.offset(offset).write(node);
+
+        /* Return the pointer to the allocation */
         mem.offset(offset + 1) as *mut u16
     }
 }

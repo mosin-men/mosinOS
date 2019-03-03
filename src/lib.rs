@@ -111,9 +111,9 @@ fn main() -> () {
      * possible.
      */
     println!("{:p}", mem::heap::allocate(14200));
-    println!("{:p}", mem::heap::allocate(4));
-    println!("{:p}", mem::heap::allocate(4));
-    println!("{:p}", mem::heap::allocate(4));
+    println!("{:p}", mem::heap::allocate(2));
+    println!("{:p}", mem::heap::allocate(61));
+    println!("{:p}", mem::heap::allocate(0));
 
     /* Hold the OS here */
     loop{}
