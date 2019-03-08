@@ -29,6 +29,10 @@ extern _semaphore_dec()
 abstract type semaphore_dec { const routine := _semaphore_dec }
 extern _fence()
 abstract type fence { const routine := _fence }
+extern _umode_switch()
+abstract type umode_switch { const routine := _umode_switch }
+extern _mmode_switch()
+abstract type mmode_switch { const routine := _mmode_switch }
 # end bindings and type wrappers
 
 

@@ -20,5 +20,7 @@ proc __no_mangle__ main() {
     trap::reset_timers()
     asm$enable_interrupts()
 
+    writehexln(ptr_to_u32(GLOBAL_CTX))
+
     while true    asm$wfi()
 }

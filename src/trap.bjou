@@ -7,6 +7,7 @@ using import "clint.bjou"
 using import "defs.bjou"
 using import "machine_info.bjou"
 using import "util.bjou"
+using import "pcb.bjou"
 
 const INTERRUPT_MASK := 0x80000000u32
 const CODE_MASK      := 0x7FFFFFFFu32
