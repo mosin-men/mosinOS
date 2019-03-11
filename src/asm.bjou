@@ -12,7 +12,8 @@
 # A u32 is returned from argument a0.
 #
 # If an address needs to be passed to an assembly function,
-# ptr_to_u32() is provided as a convenience to cast to u32.
+# one should use ptr_to_u32() which is provided util.bjou as a 
+# convenience to cast to u32.
 
 module asm
 
@@ -34,13 +35,6 @@ abstract type umode_switch { const routine := _umode_switch }
 extern _mmode_switch()
 abstract type mmode_switch { const routine := _mmode_switch }
 # end bindings and type wrappers
-
-
-proc ptr_to_u32(ptr : void*) : u32
-    return ptr as u32
-
-
-
 
 proc asm$T() : u32 {
     v_fn := T.routine as void*

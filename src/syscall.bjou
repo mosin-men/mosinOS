@@ -1,0 +1,38 @@
+# syscall.bjou
+#
+# Machine and User mode system call interface.
+
+module syscall
+
+using import "asm.bjou"
+using import "console.bjou"
+
+const EXIT    := 1u32
+const WRITE   := 2u32
+const READ    := 3u32
+const ALLOC   := 4u32
+const FREE    := 5u32
+const BARRIER := 6u32
+
+const UMODE   := 0u32
+const MMODE   := 3u32
+
+proc msyscall(code : u32) {
+    if code == UMODE {
+        asm$umode_switch()
+    } else if code == MMODE {
+        asm$mmode_switch()
+    } else {
+        writeln("Unknown Machine Mode ECALL CODE")
+    }
+}
+
+proc syscall(code : u32) {
+        if      code == EXIT     writeln("SYSCALL EXIT")
+        else if code == WRITE    writeln("SYSCALL WRITE")
+        else if code == READ     writeln("SYSCALL READ")
+        else if code == ALLOC    writeln("SYSCALL ALLOC")
+        else if code == FREE     writeln("SYSCALL FREE")
+        else if code == BARRIER  writeln("SYSCALL BARRIER")
+        else                     writeln("Unknown User Mode ECALL CODE")
+}

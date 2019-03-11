@@ -13,4 +13,4 @@ const MTIMELO    := 0xbff8u32
 const MTIMEHI    := 0xbffcu32
 
 proc get_clint_register(reg : u32) : u32 ref
-    return @u32toptr$u32(CLINT_BASE + reg)
+    return @u32_to_ptr$u32(CLINT_BASE + reg)

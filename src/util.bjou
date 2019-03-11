@@ -16,5 +16,8 @@ proc refcast$(T, U)(val : U ref) : T ref
 proc ptrcast$T(ptr : void*) : T*
     return ptr as T*
 
-proc u32toptr$T(u : u32) : T*
+proc ptr_to_u32(ptr : void*) : u32
+    return ptr as u32
+
+proc u32_to_ptr$T(u : u32) : T*
     return ptrcast$T(u as void*)

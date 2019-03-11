@@ -13,6 +13,7 @@ import "uart.bjou"
 using import "console.bjou"
 using import "asm.bjou"
 using import "atomics/locks.bjou"
+using import "syscall.bjou"
 
 proc __no_mangle__ main() {
     uart::configure()
@@ -20,7 +21,9 @@ proc __no_mangle__ main() {
     trap::reset_timers()
     asm$enable_interrupts()
 
-    writehexln(ptr_to_u32(GLOBAL_CTX))
+    msyscall(0) # enter user mode
+
+    syscall(4)
 
     while true    asm$wfi()
 }

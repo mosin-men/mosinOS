@@ -105,10 +105,14 @@ proc sync_handler(code : u32) {
         writeln("STACCESS")
     } else if code == UECALL     {
         writeln("UECALL")
+        write("Got syscall number ")
+        writeln(GLOBAL_CTX[10])
     } else if code == SECALL     {
         writeln("SECALL")
     } else if code == MECALL     {
         writeln("MECALL")
+        write("Got syscall number ")
+        writeln(GLOBAL_CTX[10])
     } else if code == IPGFAULT   {
         writeln("IPGFAULT")
     } else if code == LDPGFAULT  {
@@ -121,7 +125,7 @@ proc sync_handler(code : u32) {
 }
 
 proc update_mepc(mepc : u32) : u32 {
-    instruction := @u32toptr$u32(mepc)
+    instruction := @u32_to_ptr$u32(mepc)
     if (instruction band INST_MASK) == INST_MASK
         return mepc + 4
     return mepc + 2
