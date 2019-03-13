@@ -105,11 +105,15 @@ fn main() -> () {
     }
 
     heap_init();
+    heap_print(16);
     let ptr: *mut u32 = kmalloc(2);
     let ptr2: *mut u32 = kmalloc(2);
     let ptr3: *mut u32 = kmalloc(2);
     heap_print(16);
     kfree(ptr);
+    heap_print(16);
+    kfree(ptr3);
+    heap_print(16);
     kfree(ptr2);
     heap_print(16);
 

@@ -30,7 +30,7 @@ extern "C" {
  * The layout looks like:
  *
  * uppppppp pppppppp tccccccc cccccccc
- * 00000000 00000000 00000011 01110110
+ * 00000000 00000001 00001101 11011101
  *
  * t = taken bit
  * u = unused, reserved for future
@@ -57,7 +57,7 @@ pub fn heap_init() -> () {
          * Also divide by 4 since the size that we store is the number of words.
          */
         let node: u32 = cur_size_mask & (((heap_size - 4) / 4) as u32);
-        ptr.offset(0).write(node);
+        ptr.write(node);
 
         println!("Initializing heap at {:p}, size: {:p}", ptr, &__heap_size);
     }
@@ -178,7 +178,7 @@ pub fn kfree(arg_ptr: *mut u32) -> () {
         let nextnode: u32;
         let mut offset: isize;
         let mut ptr: *mut u32;
-        let size: u32;
+        let mut size: u32;
         let prevsize: u32;
 
         ptr = arg_ptr;
@@ -186,7 +186,7 @@ pub fn kfree(arg_ptr: *mut u32) -> () {
         end = &mut __heap_end as *mut u32;
 
         /* Sanity checks */
-        if (ptr < (start as *mut u32)) || (ptr > (end as *mut u32)) {
+        if (ptr < (start as *mut u32)) || (ptr >= (end as *mut u32)) {
             println!("ERROR: Pointer was invalid: {:p}", ptr);
             return;
         }
@@ -195,16 +195,16 @@ pub fn kfree(arg_ptr: *mut u32) -> () {
          * Go ahead and free it by usetting the "taken" bit.
          */
         ptr = ptr.offset(-1);
-        node = ptr.offset(0).read();
+        node = ptr.read();
         node &= !taken_mask;
-        ptr.offset(0).write(node);
+        ptr.write(node);
 
         /* Save the information in the node */
         size = node & cur_size_mask;
-        prevsize = node & prev_size_mask;
+        prevsize = (node & prev_size_mask) >> 16;
 
         /* Look down to see if we need to merge the block below. */
-        offset = ((node & cur_size_mask) + 1) as isize;
+        offset = (size + 1) as isize;
         if ptr.offset(offset) < end {
             nextnode = ptr.offset(offset).read();
             if (nextnode & taken_mask) == 0 {
@@ -212,15 +212,21 @@ pub fn kfree(arg_ptr: *mut u32) -> () {
                  * since we're clearing it out in memory.
                  */
                 node &= !cur_size_mask;
-                node |= ((nextnode & cur_size_mask) + size + 1) & cur_size_mask;
-                ptr.offset(0).write(node);
+                size = (nextnode & cur_size_mask) + size + 1;
+                node |= size & cur_size_mask;
+                ptr.write(node);
             }
         }
 
+
         /* Look up to see if we need to merge the block above. */
-        offset = ((node & prev_size_mask) + 1) as isize;
-        if offset != 1 {
+        offset = (prevsize + 1) as isize;
+        if prevsize != 0 {
             prevnode = ptr.offset(offset.wrapping_neg()).read();
+            println!("Prevsize: {}", prevsize);
+            println!("Offset: {}", offset);
+            println!("Offset: {}", offset.wrapping_neg());
+            println!("Prevnode: {:032b}", prevnode);
             if (prevnode & taken_mask) == 0 {
                 /* If the previous node isn't taken, merge. */
                 prevnode &= !cur_size_mask;
