@@ -14,6 +14,7 @@ using import "console.bjou"
 using import "asm.bjou"
 using import "atomics/locks.bjou"
 using import "syscall.bjou"
+using import "heap.bjou"
 
 proc __no_mangle__ main() {
     uart::configure()
