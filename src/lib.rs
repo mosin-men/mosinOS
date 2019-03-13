@@ -50,6 +50,7 @@ mod machine_info;
 mod trap;
 mod syscalls;
 mod mem;
+use crate::mem::heap::{*};
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
@@ -103,20 +104,14 @@ fn main() -> () {
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
     }
 
-    mem::heap::heap_init();
-    let ptr: *mut u16 = mem::heap::kmalloc(2);
-    let ptr2: *mut u16 = mem::heap::kmalloc(62);
-    mem::heap::kfree(ptr);
-    mem::heap::kfree(ptr2);
-    let ptr3: *mut u16 = mem::heap::kmalloc(63);
-    let ptr4: *mut u16 = mem::heap::kmalloc(63);
-    let ptr5: *mut u16 = mem::heap::kmalloc(63);
-    let ptr6: *mut u16 = mem::heap::kmalloc(63);
-    let ptr7: *mut u16 = mem::heap::kmalloc(63);
-    let ptr8: *mut u16 = mem::heap::kmalloc(63);
-    let ptr9: *mut u16 = mem::heap::kmalloc(63);
-    let ptr10: *mut u16 = mem::heap::kmalloc(63);
-    mem::heap::kfree(ptr3);
+    heap_init();
+    let ptr: *mut u32 = kmalloc(2);
+    let ptr2: *mut u32 = kmalloc(2);
+    let ptr3: *mut u32 = kmalloc(2);
+    heap_print(16);
+    kfree(ptr);
+    kfree(ptr2);
+    heap_print(16);
 
     /* Hold the OS here */
     loop{}
