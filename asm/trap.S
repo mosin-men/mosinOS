@@ -42,21 +42,14 @@ _trap_handler:
   csrw mepc, a0
 
 # restore t6 register 
-# and save to mscratch
-  la t5, GLOBAL_CTX
-  lv 31, t5
-  csrw mscratch, t6
-
 #restore other registers
   la t6, GLOBAL_CTX
   .set i, 0
-  .rept 31
+  .rept 32
     lv %i
     .set i, i+1
   .endr
 
-#restore t6 from mscratch
-  csrr t6, mscratch
   mret
 
 .align 4

@@ -4,7 +4,9 @@ pub fn exit(code: u32) {
 }
 
 pub fn alloc(size: u32) {
-    _alloc(4, size);
+    let rv = _alloc(4, size);
+     
+
 }
 
 pub fn free(addr: u32) {
@@ -18,7 +20,7 @@ fn _exit(syscode: u32, code: u32){
     }
 }
 
-fn _alloc(syscode: u32, size: u32){
+fn _alloc(syscode: u32, size: u32) -> u32{
     unsafe{
         asm!("ecall");
     }

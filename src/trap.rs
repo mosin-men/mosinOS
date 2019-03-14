@@ -64,7 +64,7 @@ fn ahandler(code: u32){
     UTIMER    => println!("USER MODE TIMER INTERRUPT"),
     STIMER    => println!("SUPERVISOR MODE TIMER INTERRUPT"),
     MTIMER    => {
-      println!("MACHINE MODE TIMER INTERRUPT");
+//      println!("MACHINE MODE TIMER INTERRUPT");
       reset_timers();
     },
     UEXTERNAL => println!("USER MODE EXTERNAL INTERRUPT"),

@@ -54,6 +54,7 @@ use crate::mem::heap::{*};
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
+use crate::mem::pmp::PMP_MODES as pmp_modes;
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -117,6 +118,7 @@ fn main() -> () {
     kfree(ptr2);
     heap_print(16);
 
+    mem::pmp::pmp_set(3, true, false, false, pmp_modes::TOR, 46);
     /* Hold the OS here */
     loop{}
 }
