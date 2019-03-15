@@ -8,6 +8,7 @@ static PMP_MASKS: [u32; 4] = [0xFF_FF_FF_00,
                              ];
 #[derive(Copy, Clone)]
 pub enum PMP_MODES{
+    OFF,
     TOR,
     NA4,
     NAPOT,
@@ -15,6 +16,7 @@ pub enum PMP_MODES{
 
 pub fn pmp_set(idx: usize, read: bool, write: bool, exec: bool, mode: PMP_MODES, addr: u32)
 {
+    let orig_idx = idx;
     let mut pmpcfg: u32 = 1;
     let pmpcfg_idx = idx >> 2;
     let idx = idx & 0x3;
@@ -66,7 +68,7 @@ pub fn pmp_set(idx: usize, read: bool, write: bool, exec: bool, mode: PMP_MODES,
 
     }
 
-    set_pmp_addr(idx, mode, addr);
+    set_pmp_addr(orig_idx, mode, addr);
 
 
 }
@@ -74,6 +76,7 @@ pub fn pmp_set(idx: usize, read: bool, write: bool, exec: bool, mode: PMP_MODES,
 fn get_mode_mask(mode: PMP_MODES) -> u8
 {
     match mode{
+        PMP_MODES::OFF   => 0x00,
         PMP_MODES::TOR   => 0x08,
         PMP_MODES::NA4   => 0x10,
         PMP_MODES::NAPOT => 0x18,
@@ -107,6 +110,7 @@ fn set_pmp_addr(idx: usize, mode: PMP_MODES, _addr:  u32){
                             },
         _                 => {} 
     }
+
     unsafe{
         match idx {
             0 => { asm!("csrw pmpaddr0, $0" : /*no outputs*/: "r"(addr)) },

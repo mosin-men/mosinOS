@@ -54,12 +54,8 @@ use crate::mem::heap::{*};
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
-<<<<<<< HEAD
 use crate::mem::pmp::PMP_MODES as pmp_modes;
-||||||| merged common ancestors
-=======
 use crate::utils::rbtree::rbtree;
->>>>>>> 737fa7128a229f8eb291d0ae663ad7e7b8c79245
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -122,27 +118,37 @@ fn main() -> () {
     heap_print(16);
     kfree(ptr2);
     heap_print(16);
-
-    mem::pmp::pmp_set(0, true, true, false, pmp_modes::TOR, 0x80000080);
-    mem::pmp::pmp_set(1, false, false, false, pmp_modes::TOR, 0x800000FF);
-
+    
+    mem::pmp::pmp_set(0, true, true, true, pmp_modes::TOR, 0x80000080);
+    mem::pmp::pmp_set(1, false, false, false, pmp_modes::TOR, 0x80000090);
+    mem::pmp::pmp_set(2, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(3, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(4, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(5, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(6, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(7, false, false, false, pmp_modes::OFF, 0x0);
 
     let ptr: *mut u32 = kmalloc(16);
+    println!("ptr = {:#010X}", ptr as u32);
     let ptr2: *mut u32 = 0 as *mut u32;
-    let pmpcfg: u32;
-    let pmpaddr: u32;
-    let pmpaddr2: u32;
+    let pmpcfg0: u32;
+    let pmpcfg1: u32;
+    let pmpaddr0: u32;
+    let pmpaddr1: u32;
+    let mut mstatus : u32;
     unsafe{
-        asm!("csrr $0, pmpcfg0": "=r"(pmpcfg));
-        asm!("csrr $0, pmpaddr0": "=r"(pmpaddr));
-        asm!("csrr $0, pmpaddr1": "=r"(pmpaddr2));
+        // asm!("li t1, 0x20000\ncsrs mstatus, t1":::"t1":"volatile");
 
+        asm!("csrr $0, pmpcfg0": "=r"(pmpcfg0));
+        asm!("csrr $0, pmpcfg1": "=r"(pmpcfg1));
+        asm!("csrr $0, pmpaddr0": "=r"(pmpaddr0));
+        asm!("csrr $0, pmpaddr1": "=r"(pmpaddr1));
     }
 
-    println!("pmpcfg: {:#010X}, pmpaddr: {:#010X}, pmpaddr2: {:#010X}", pmpcfg, pmpaddr, pmpaddr2);
+    println!("pmpcfg0: {:#010X}, pmpcfg1: {:#010X}, pmpaddr0: {:#010X}, pmpaddr1: {:#010X}", pmpcfg0, pmpcfg1, pmpaddr0, pmpaddr1);
     msyscall(0);
-    println!("HERE");
     syscall(0);
+    
     unsafe{
         ptr.write_volatile(8);
         println!("ptr: {:p} value @ ptr: {}", ptr, ptr.read_volatile());
