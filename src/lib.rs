@@ -11,7 +11,7 @@
 macro_rules! print {
   ($($arg:tt)*) => {
     {
-      let mut con = console::Console();
+      let mut con = console::Console{};
       if let Err(_c) = write!(con, "{}", format_args!($($arg)*)){
         //some error handling?
       }
@@ -54,7 +54,12 @@ use crate::mem::heap::{*};
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
+<<<<<<< HEAD
 use crate::mem::pmp::PMP_MODES as pmp_modes;
+||||||| merged common ancestors
+=======
+use crate::utils::rbtree::rbtree;
+>>>>>>> 737fa7128a229f8eb291d0ae663ad7e7b8c79245
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -144,6 +149,10 @@ fn main() -> () {
     }
     
     /* Hold the OS here */
-    loop{}
+    loop{
+        unsafe{
+            asm!("wfi");
+        }
+    }
 }
 

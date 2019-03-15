@@ -35,7 +35,7 @@ $(RUST_OBJECT): Makefile $(RUST_SOURCES)
 	$(XARGO) build --features qemu --target=$(TARGET)
 
 qemu: $(OUT)
-	$(QEMU) $(QEMUARGS) 
+	$(QEMU) $(QEMUARGS)
 
 gdb: $(OUT)
 	#$(QEMU) $(QEMUARGS) -S -s &
