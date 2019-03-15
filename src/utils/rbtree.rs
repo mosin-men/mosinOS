@@ -34,7 +34,7 @@ macro_rules! NULL {
     ($T:ty) => (core::ptr::null::<$T>() as *mut $T)
 }
 
-pub struct rbtree_node<K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + PartialOrd + core::fmt::Debug> {
+pub struct rbtree_node<K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> {
     red      : bool,
     children : [ *mut Self; 2],
     parent   : *mut Self,
@@ -42,7 +42,7 @@ pub struct rbtree_node<K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone 
     val      : V_T
 }
 
-impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + PartialOrd + core::fmt::Debug> rbtree_node<K_T, V_T> {
+impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> rbtree_node<K_T, V_T> {
     unsafe fn print(&self, lvl : u32) {
         if !child!(self, 1).is_null() {
             (*child!(self, 1)).print(lvl + 1);
@@ -120,13 +120,13 @@ impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + PartialOrd + co
     }
 }
 
-pub struct rbtree<K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + PartialOrd + core::fmt::Debug> {
+pub struct rbtree<K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> {
     root : *mut rbtree_node<K_T, V_T>,
     beg  : *mut rbtree_node<K_T, V_T>,
     len  : usize
 }
 
-impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + PartialOrd + core::fmt::Debug> rbtree<K_T, V_T> {
+impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> rbtree<K_T, V_T> {
     pub fn new() -> Self {
         rbtree {
             root : NULL!(rbtree_node<K_T, V_T>),
