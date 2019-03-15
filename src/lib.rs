@@ -118,7 +118,31 @@ fn main() -> () {
     kfree(ptr2);
     heap_print(16);
 
-    mem::pmp::pmp_set(3, true, false, false, pmp_modes::TOR, 46);
+    mem::pmp::pmp_set(0, true, true, false, pmp_modes::TOR, 0x80000080);
+    mem::pmp::pmp_set(1, false, false, false, pmp_modes::TOR, 0x800000FF);
+
+
+    let ptr: *mut u32 = kmalloc(16);
+    let ptr2: *mut u32 = 0 as *mut u32;
+    let pmpcfg: u32;
+    let pmpaddr: u32;
+    let pmpaddr2: u32;
+    unsafe{
+        asm!("csrr $0, pmpcfg0": "=r"(pmpcfg));
+        asm!("csrr $0, pmpaddr0": "=r"(pmpaddr));
+        asm!("csrr $0, pmpaddr1": "=r"(pmpaddr2));
+
+    }
+
+    println!("pmpcfg: {:#010X}, pmpaddr: {:#010X}, pmpaddr2: {:#010X}", pmpcfg, pmpaddr, pmpaddr2);
+    msyscall(0);
+    println!("HERE");
+    syscall(0);
+    unsafe{
+        ptr.write_volatile(8);
+        println!("ptr: {:p} value @ ptr: {}", ptr, ptr.read_volatile());
+    }
+    
     /* Hold the OS here */
     loop{}
 }

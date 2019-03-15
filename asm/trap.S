@@ -38,6 +38,7 @@ _trap_handler:
 #jump to trap_handler in rust
   csrr a0, mcause
   csrr a1, mepc
+  csrr a2, mtval
   call trap_handler
   csrw mepc, a0
 

@@ -37,7 +37,7 @@ const   LPAGEFAULT: u32 = 13;
 const   SPAGEFAULT: u32 = 15;
 
 #[no_mangle]
-fn trap_handler(cause: u32, mepc: u32) -> u32{
+fn trap_handler(cause: u32, mepc: u32, mtval: u32) -> u32{
   let code = cause & CODE_MASK;
   let sync = cause & INTERRUPT;
   match sync {
@@ -46,7 +46,7 @@ fn trap_handler(cause: u32, mepc: u32) -> u32{
         mepc
     }
     0         => {
-      shandler(code);
+      shandler(code, mtval);
       update_mepc(mepc)
     }
     _         => {
@@ -75,16 +75,16 @@ fn ahandler(code: u32){
   
 }
 
-fn shandler(code: u32){
+fn shandler(code: u32, mtval: u32){
   match code {
     IADDMISS   => println!("INSTRUCTION ADDRESS MISSALIGNED"),
     IACCFAULT  => println!("INSTRUCTION ACCESS FAULT"),
     ILLINS     => println!("ILLEGAL INSTRUCTION"),
     BREAK      => println!("BREAK"),
     LADDMISS   => println!("LOAD ADDRESS MISSALIGNED"),
-    LACCFAULT  => println!("LOAD ACCESS FAULT"),
+    LACCFAULT  => println!("LOAD ACCESS FAULT: {:#010X}", mtval),
     SADDMISS   => println!("STORE ADDRESS MISSALIGNED"),
-    SACCFAULT  => println!("STORE ACCESS FAULT"),
+    SACCFAULT  => println!("STORE ACCESS FAULT: {:#010X}", mtval),
     UECALL     => 
     {
         println!("USER MODE ECALL");
@@ -95,6 +95,7 @@ fn shandler(code: u32){
     SECALL     => println!("SUPERVISOR MODE ECALL"),
     MECALL     => 
     {
+        println!("MACHINE MODE ECALL");
         unsafe{
         syscalls::do_msyscall(GLOBAL_CTX[10]);
         }
