@@ -6,6 +6,7 @@
 module compiler_support
 
 import "mem.bjou"
+import "heap.bjou"
 
 # Provide these bindings so that compiler generated memcpy and memset
 # calls still work.
@@ -15,4 +16,8 @@ proc __no_mangle__ memcpy(dst : void*, src : void*, nbytes : u64) : void* {
 
 proc __no_mangle__ memset(dst : void*, val : u8, nbytes : u64) : void* {
     return mem::mset(dst, val, nbytes)
+}
+
+proc __no_mangle__ malloc(nbytes : u32) : void* {
+    return heap::kmalloc(nbytes)
 }

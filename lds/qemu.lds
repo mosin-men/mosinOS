@@ -152,11 +152,14 @@ SECTIONS
   PROVIDE( __bss_end = . );
   PROVIDE( _end = . );
   PROVIDE( end = . );
+  PROVIDE( __heap_start = .);
 
   .stack ORIGIN(ram) + LENGTH(ram) - __stack_size :
   {
-    PROVIDE( _heap_end = . );
+    PROVIDE( __heap_end = . );
     . = __stack_size;
     PROVIDE( _sp = . );
   } >ram AT>ram :ram
+  
+  PROVIDE( __heap_size = __heap_end - __heap_start);
 }

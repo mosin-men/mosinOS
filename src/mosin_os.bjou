@@ -24,7 +24,8 @@ proc __no_mangle__ main() {
 
     msyscall(0) # enter user mode
 
-    syscall(4)
+    heap_init()
+    heap_print(16)
 
     while true    asm$wfi()
 }

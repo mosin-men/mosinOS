@@ -103,6 +103,12 @@ proc writehex(u : u32) {
     _con.write(buff)
 }
 
+proc writebin(u : u32) {
+    buff : char[33]
+    itoab(u, buff)
+    _con.write(buff)
+}
+
 proc writeln() {
     _con.write("\n")
 }
@@ -118,6 +124,13 @@ proc writehexln(u : u32) {
     buff : char[64]
     itoax(u, buff)
     _con.write("0x")
+    _con.write(buff)
+    _con.write("\n")
+}
+
+proc writebinln(u : u32) {
+    buff : char[33]
+    itoab(u, buff)
     _con.write(buff)
     _con.write("\n")
 }

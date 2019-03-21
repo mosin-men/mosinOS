@@ -41,9 +41,9 @@ const LDPGFAULT := 13u32 # Load page fault
 const STPGFAULT := 15u32 # Store/AMO page fault
 
 proc __no_mangle__ trap_handler(cause : u32, mepc : u32) : u32 {
-    writeln("In trap handler")
-    write("cause: ") writehexln(cause)
-    write("mepc:  ") writehexln(mepc)
+    # writeln("In trap handler")
+    # write("cause: ") writehexln(cause)
+    # write("mepc:  ") writehexln(mepc)
 
     interrupt := cause band INTERRUPT_MASK
     code      := cause band CODE_MASK
@@ -73,7 +73,7 @@ proc async_handler(code : u32) {
     } else if code == STIME      {
         writeln("STIME")
     } else if code == MTIME      {
-        writeln("MTIME")
+        # writeln("MTIME")
         reset_timers()
     } else if code == UEXT       {
         writeln("UEXT")
