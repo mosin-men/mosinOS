@@ -54,7 +54,7 @@ const max_block_size := (1u32 bshl 15u32) * 4u32
 
 proc heap_init() {
     heap_sz := ptr_to_u32(&__heap_size)
-    ptr     := ptrcast$u32(&__heap_start) # pointer to start of heap
+    ptr     := &__heap_start # pointer to start of heap
 
     # Take 4 bytes from the size of the heap, that's this node
     # in the freelist.
@@ -191,14 +191,14 @@ proc kfree(arg_ptr : u32*) {
 
     # Grab the node in the freelist that's going to be freed.
     # Go ahead and free it by unsetting the "taken" bit.
-    ptr   = ptr - 1
+    ptr  -= 1
     node := @ptr
     node  = node band bneg taken_mask
     @ptr  = node
 
     # Save the information in the node
     size     := node band cur_size_mask
-    prevsize := node band prev_size_mask
+    prevsize := (node band prev_size_mask) bshr 16
 
     # Look down to see if we need to merge the block below
     offset := size + 1
@@ -221,8 +221,8 @@ proc kfree(arg_ptr : u32*) {
 
         write("Prevsize: ") writeln(prevsize)
         write("Offset:   ") writeln(offset)
-        write("Offset:   ") writeln(0 - prevsize)
-        write("Prevnode: ") writehexln(prevnode)
+        write("Offset:   ") writeln(0 - offset)
+        write("Prevnode: ") writebinln(prevnode)
 
         if not (prevnode band taken_mask) {
             # If the previous node isn't taken, merge.

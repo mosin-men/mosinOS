@@ -19,6 +19,7 @@ _con       : console
 proc init() { _con = console.create() }
 
 type console {
+    array : int[2]
     read_fn : <() : char>
 
     proc create() : console {

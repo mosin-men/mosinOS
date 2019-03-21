@@ -140,11 +140,11 @@ SECTIONS
   PROVIDE( __bss_start = . );
   .bss            :
   {
-    /* *(.sbss*) */
-    /* *(.gnu.linkonce.sb.*) */
+    *(.sbss*)
+    *(.gnu.linkonce.sb.*)
     *(.bss .bss.*)
-    /* *(.gnu.linkonce.b.*) */
-    /* *(COMMON) */
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
     . = ALIGN(4);
   } >ram AT>ram :ram
 
@@ -160,6 +160,6 @@ SECTIONS
     . = __stack_size;
     PROVIDE( _sp = . );
   } >ram AT>ram :ram
-  
+
   PROVIDE( __heap_size = __heap_end - __heap_start);
 }
