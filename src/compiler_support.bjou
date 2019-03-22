@@ -18,6 +18,10 @@ proc __no_mangle__ memset(dst : void*, val : u8, nbytes : u64) : void* {
     return mem::mset(dst, val, nbytes)
 }
 
-proc __no_mangle__ malloc(nbytes : u32) : void* {
+proc __no_mangle__ malloc(nbytes : u64) : void* {
     return heap::kmalloc(nbytes)
+}
+
+proc __no_mangle__ free(ptr : void*) {
+    heap::kfree(ptr as u32*)
 }

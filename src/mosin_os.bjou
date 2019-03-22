@@ -29,6 +29,9 @@ proc __no_mangle__ main() {
     ptr  := kmalloc(2)
     ptr2 := kmalloc(2)
     ptr3 := kmalloc(2)
+    ptr4 := new u32
+    heap_print(16)
+    delete ptr4
     heap_print(16)
     kfree(ptr)
     heap_print(16)
