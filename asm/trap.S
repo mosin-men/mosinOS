@@ -39,7 +39,7 @@ _trap_handler:
   csrr a0, mcause
   csrr a1, mepc
   csrr a2, mtval
-  call trap_handler
+  call handle_trap
   csrw mepc, a0
 
 # restore t6 register 

@@ -50,6 +50,7 @@ mod machine_info;
 mod trap;
 mod syscalls;
 mod mem;
+mod scheduler;
 use crate::mem::heap::{*};
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
@@ -98,8 +99,9 @@ fn main() -> () {
 
     /* Initialize */
     console::init();
-    trap::reset_timers();
-
+    unsafe{
+        scheduler::scheduler::init();
+    }
     /* Turns on timer interrupts */
     unsafe{
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
