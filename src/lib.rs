@@ -94,21 +94,33 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     abort()
 }
 
+
+unsafe fn init() {
+    println!("IN INIT");
+    loop{
+        asm!("wfi");
+    }
+}
+
+
 #[no_mangle]
 fn main() -> () {
 
     /* Initialize */
+    heap_init();
     console::init();
     unsafe{
-        scheduler::scheduler::init();
+    scheduler::sched.init();
     }
     /* Turns on timer interrupts */
     unsafe{
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
+      scheduler::sched.new_process(100, init as u32, 1);
+      asm!("wfi");
     }
 
-    heap_init();
+
     heap_print(16);
     let ptr: *mut u32 = kmalloc(2);
     let ptr2: *mut u32 = kmalloc(2);

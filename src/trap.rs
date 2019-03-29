@@ -1,7 +1,7 @@
 use crate::console as console;
 use core::fmt::Write;
 use crate::syscalls as syscalls;
-use crate::scheduler::scheduler as scheduler;
+use crate::scheduler;
 
 extern "C" {
   static GLOBAL_CTX: [u32; 32];
@@ -43,15 +43,16 @@ struct trap_handler{}
 
 
 #[no_mangle]
-fn handle_trap(cause: u32, mepc: u32, mtval: u32) -> u32{
+fn handle_trap(cause: u32, mut mepc: u32, mtval: u32) -> u32{
     let code = cause & CODE_MASK;
     let mode = cause & ASYNC;
-    trap_handler::handler(code, mepc, mode, mtval);
-    trap_handler::update_mepc(mepc, mode)
+    mepc = trap_handler::handler(code, mepc, mode, mtval);
+    mepc = trap_handler::update_mepc(mepc, mode);
+    return mepc;
 }
 
 impl trap_handler{
-    fn handler(code: u32, mut mepc: u32, mode: u32, mtval: u32){
+    fn handler(code: u32, mut mepc: u32, mode: u32, mtval: u32) -> u32{
         match (mode, code) {
             (ASYNC, USOFTWARE) => println!("USER MODE SOFTWARE INTERRUPT"),
             (ASYNC, SSOFTWARE) => println!("SUPERVISOR MODE SOFTWARE INTERRUPT"),
@@ -60,7 +61,9 @@ impl trap_handler{
             (ASYNC, STIMER)    => println!("SUPERVISOR MODE TIMER INTERRUPT"),
             (ASYNC, MTIMER)    => {
                 println!("MACHINE MODE TIMER INTERRUPT");
-                mepc = scheduler::update_schedule(mepc);
+                unsafe{
+                mepc = scheduler::sched.update_schedule(mepc);
+                }
             },
             (ASYNC, UEXTERNAL) => println!("USER MODE EXTERNAL INTERRUPT"),
             (ASYNC, SEXTERNAL) => println!("SUPERVISOR MODE EXTERNAL INTERRUPT"),
@@ -95,10 +98,11 @@ impl trap_handler{
             (SYNC, _)          => println!("UNKNOWN SYNCRONOUS TRAP CODE"),
             _                  => println!("UNKNOWN TRAP CODE AND MODE"),
         }
+        return mepc;
     }
 
     fn update_mepc(mepc: u32, mode: u32) -> u32{
-        if (mode == ASYNC) { return mepc};
+        if (mode == ASYNC) { return mepc;}
         unsafe{
             let instruction: u32 = *(mepc as *const u32);
             match instruction & INST_MASK {
