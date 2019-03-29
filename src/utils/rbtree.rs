@@ -67,7 +67,6 @@ impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debu
 
     unsafe fn new(key : &K_T, val : &V_T) -> *mut Self {
         let ptr  = alloc!(Self);
-        println!("allocated node {:p}", ptr);
         let node = &mut *ptr;
 
         node.red        = true;
@@ -123,7 +122,7 @@ impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debu
 pub struct rbtree<K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> {
     root : *mut rbtree_node<K_T, V_T>,
     beg  : *mut rbtree_node<K_T, V_T>,
-    len  : usize
+    pub len  : usize
 }
 
 impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> rbtree<K_T, V_T> {
@@ -139,6 +138,7 @@ impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debu
         unsafe {
             if !self.root.is_null() {
                 (*self.root).dispose();
+                free!(self.root);
                 self.beg = NULL!(rbtree_node<K_T, V_T>);
                 self.len = 0;
             }
@@ -278,7 +278,7 @@ impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debu
             if self.root.is_null() { return false; }
 
             if self.len == 1 && (*self.root).key == key {
-                (*self.root).dispose();
+                free!(self.root);
                 self.root = NULL!(rbtree_node<K_T, V_T>);
                 self.beg  = NULL!(rbtree_node<K_T, V_T>);
                 self.len  = 0;
@@ -373,7 +373,7 @@ impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debu
                     self.beg = p;
                 }
 
-                (*q).dispose();
+                free!(q);
 
                 q = NULL!(rbtree_node<K_T, V_T>);
             }

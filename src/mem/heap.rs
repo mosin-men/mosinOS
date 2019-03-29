@@ -43,7 +43,7 @@ extern "C" {
 const taken_mask: u32 = 0x00008000;
 const cur_size_mask: u32 = 0x00007FFF;
 const prev_size_mask: u32 = 0x7FFF0000;
-const max_block_size: u32 = (2 ^ 15) * 4;
+const max_block_size: u32 = (1 << 15) * 4;
 
 /* Initialize the heap by simply creating a single free node at the beginning of the heap,
  * which is at __heap_start.
@@ -59,7 +59,7 @@ pub fn heap_init() -> () {
         let node: u32 = cur_size_mask & (((heap_size - 4) / 4) as u32);
         ptr.write(node);
 
-        println!("Initializing heap at {:p}, size: {:p}", ptr, &__heap_size);
+        // println!("Initializing heap at {:p}, size: {:p}", ptr, &__heap_size);
     }
 }
 
@@ -223,10 +223,10 @@ pub fn kfree(arg_ptr: *mut u32) -> () {
         offset = (prevsize + 1) as isize;
         if prevsize != 0 {
             prevnode = ptr.offset(offset.wrapping_neg()).read();
-            println!("Prevsize: {}", prevsize);
-            println!("Offset: {}", offset);
-            println!("Offset: {}", offset.wrapping_neg());
-            println!("Prevnode: {:032b}", prevnode);
+            // println!("Prevsize: {}", prevsize);
+            // println!("Offset: {}", offset);
+            // println!("Offset: {}", offset.wrapping_neg());
+            // println!("Prevnode: {:032b}", prevnode);
             if (prevnode & taken_mask) == 0 {
                 /* If the previous node isn't taken, merge. */
                 prevnode &= !cur_size_mask;

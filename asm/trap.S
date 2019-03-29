@@ -36,6 +36,7 @@ _trap_handler:
   csrr t6, mscratch
   sv 31, t5
 #jump to trap_handler in rust
+  la x2, __kstack
   csrr a0, mcause
   csrr a1, mepc
   csrr a2, mtval

@@ -94,14 +94,21 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     abort()
 }
 
-
-unsafe fn init() {
-    println!("IN INIT");
+#[no_mangle]
+unsafe fn proc_a() -> ! {
     loop{
+        println!("IN A");
         asm!("wfi");
     }
 }
 
+#[no_mangle]
+unsafe fn proc_b() -> ! {
+    loop{
+        println!("IN B");
+        asm!("wfi");
+    }
+}
 
 #[no_mangle]
 fn main() -> () {
@@ -116,7 +123,8 @@ fn main() -> () {
     unsafe{
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
-      scheduler::sched.new_process(100, init as u32, 1);
+      scheduler::sched.new_process(1000, proc_a as u32, 1);
+      scheduler::sched.new_process(1000, proc_b as u32, 1);
       asm!("wfi");
     }
 
