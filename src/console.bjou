@@ -13,6 +13,7 @@ module console
 import "defs.bjou"
 import "uart.bjou"
 using import "cstr.bjou"
+using import "util.bjou"
 
 _con       : console
 
@@ -104,6 +105,13 @@ proc writehex(u : u32) {
     _con.write(buff)
 }
 
+proc writehex(p : void*) {
+    buff : char[64]
+    itoax(ptr_to_u32(p), buff)
+    _con.write("0x")
+    _con.write(buff)
+}
+
 proc writebin(u : u32) {
     buff : char[33]
     itoab(u, buff)
@@ -112,6 +120,11 @@ proc writebin(u : u32) {
 
 proc writeln() {
     _con.write("\n")
+}
+
+proc writeln(c : char) {
+    _con.write(c)
+    _con.write('\n')
 }
 
 proc writeln(i : i32) {
@@ -124,6 +137,14 @@ proc writeln(i : i32) {
 proc writehexln(u : u32) {
     buff : char[64]
     itoax(u, buff)
+    _con.write("0x")
+    _con.write(buff)
+    _con.write("\n")
+}
+
+proc writehexln(p : void*) {
+    buff : char[64]
+    itoax(ptr_to_u32(p), buff)
     _con.write("0x")
     _con.write(buff)
     _con.write("\n")

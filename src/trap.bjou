@@ -55,7 +55,7 @@ proc __no_mangle__ trap_handler(cause : u32, mepc : u32) : u32 {
         sync_handler(code)
         return update_mepc(mepc)
     } else {
-        write("Unknown trap cause: ") writeln(cause)
+        write("Unknown trap cause: ") writeln(cause as i32)
     }
 
     return 0
@@ -106,13 +106,13 @@ proc sync_handler(code : u32) {
     } else if code == UECALL     {
         writeln("UECALL")
         write("Got syscall number ")
-        writeln(GLOBAL_CTX[10])
+        writeln(GLOBAL_CTX[10] as i32)
     } else if code == SECALL     {
         writeln("SECALL")
     } else if code == MECALL     {
         writeln("MECALL")
         write("Got syscall number ")
-        writeln(GLOBAL_CTX[10])
+        writeln(GLOBAL_CTX[10] as i32)
     } else if code == IPGFAULT   {
         writeln("IPGFAULT")
     } else if code == LDPGFAULT  {

@@ -15,30 +15,35 @@ using import "asm.bjou"
 using import "atomics/locks.bjou"
 using import "syscall.bjou"
 using import "heap.bjou"
+using import "rbtree.bjou"
 
 proc __no_mangle__ main() {
+    heap::init()
     uart::configure()
     console::init()
     trap::reset_timers()
     asm$enable_interrupts()
 
-    msyscall(0) # enter user mode
+    tree := rbtree$(char, int).create()
+    str := "mosinOS written in the bJou programming language"
+    for i := 0; i < cstrlen(str); i += 1 {
+        c := str[i]
+        write("inserting ")    writeln(c)
+        tree.insert(c, c as int)
+    }
+    tree.write()
+    while true {
+        if first : (char ref, int ref) = tree.first() {
+            writeln(util::unref(first.0))
+            tree.remove(first.0)
+            # tree.write()
+        } else {
+            break
+        }
+    }
+    tree.destroy()
 
-    heap_init()
-    heap_print(16)
-    ptr  := kmalloc(2)
-    ptr2 := kmalloc(2)
-    ptr3 := kmalloc(2)
-    ptr4 := new u32
-    heap_print(16)
-    delete ptr4
-    heap_print(16)
-    kfree(ptr)
-    heap_print(16)
-    kfree(ptr3)
-    heap_print(16)
-    kfree(ptr2)
-    heap_print(16)
+    writeln("We booted.")
 
     while true    asm$wfi()
 }
