@@ -111,7 +111,8 @@ type scheduler {
                 # writeln("no process to schedule")
                 if not all_pcbs.is_null()
                     kfree(all_pcbs)
-                kfree(waiting)
+                if not waiting.is_null()
+                    kfree(waiting)
                 return mepc
             }
         }
@@ -127,7 +128,8 @@ type scheduler {
 
         if not all_pcbs.is_null()
             kfree(all_pcbs)
-        kfree(waiting)
+        if not waiting.is_null()
+            kfree(waiting)
         return this.current.pc
     }
 
