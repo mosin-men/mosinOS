@@ -1,0 +1,20 @@
+# sleep.bjou
+
+module process_sleep
+
+using import "syscall.bjou"
+
+type sleep {
+    const STACK_SIZE := 256
+    const QM         := 8
+    const PROC_NAME  := "sleep"
+
+    proc routine(data : void*, data_len : u32) {
+        if data_len < 2 {
+            writeln("sleep: input required")
+            return
+        }
+        secs  := atoi(data as char*)
+        syscall::sleep(secs as u32)
+    }
+}

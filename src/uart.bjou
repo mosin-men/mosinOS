@@ -6,6 +6,8 @@ module uart
 
 using import "defs.bjou"
 using import "machine_info.bjou"
+using import "error.bjou"
+using import "none.bjou"
 
 \static_if{ TARGET == QEMU
     const ADDR         := (0x10013000u32 as void*) }
@@ -37,7 +39,7 @@ enum UartRegisters {
 #    Load the divisor into the UartRegisters.DIV register. This MUST be
 #    called prior to attempting to read from/write to the UART.
 
-proc configure() {
+proc init() : (error | none) {
     mem := ADDR as u32*
 
     #    Enable both send and receive. Consider breaking this out into
@@ -56,6 +58,8 @@ proc configure() {
     \volatile_w{ @(mem + (UartRegisters.DIV    as u32)) = UART_DIVISOR }
     \volatile_w{ @(mem + (UartRegisters.TXCTRL as u32)) = txreg        }
     \volatile_w{ @(mem + (UartRegisters.RXCTRL as u32)) = rxreg        }
+
+    return { none: }
 }
 
 proc read() : char {

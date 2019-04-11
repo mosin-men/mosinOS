@@ -1,7 +1,0 @@
-# pcb.bjou
-#
-# Process information
-
-module pcb
-
-externvar GLOBAL_CTX : u32[32]

@@ -1,0 +1,24 @@
+# kill.bjou
+
+module process_kill
+
+using import "syscall.bjou"
+using import "cstr.bjou"
+
+type kill {
+    const STACK_SIZE := 256
+    const QM         := 1
+    const PROC_NAME  := "kill"
+
+    proc routine(data : void*, data_len : u32) {
+        if data_len < 2 {
+            writeln("kill: input required")
+            return
+        }
+        pid    := atoi(data as char*)
+        result := syscall::kill(pid)
+        if result {
+            write("kill: no process with pid ")  writeln(pid)
+        }
+    }
+}

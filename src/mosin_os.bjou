@@ -7,43 +7,69 @@
 
 import "compiler_support.bjou"
 import "__slice.bjou"
+using import "none.bjou"
+using import "error.bjou"
 import "defs.bjou"
 import "trap.bjou"
 import "uart.bjou"
 using import "console.bjou"
 using import "asm.bjou"
+using import "util.bjou"
+using import "PCB.bjou"
 using import "atomics/locks.bjou"
 using import "syscall.bjou"
 using import "heap.bjou"
-using import "rbtree.bjou"
+using import "sched.bjou"
+using import "abort.bjou"
+using import "processes/a.bjou"
+using import "processes/b.bjou"
+using import "processes/c.bjou"
+using import "processes/init.bjou"
+using import "processes/mkproc.bjou"
 
 proc __no_mangle__ main() {
-    heap::init()
-    uart::configure()
-    console::init()
-    trap::reset_timers()
-    asm$enable_interrupts()
+    # Initialize core components.
+    if  start_component("uart",    uart   ::init)
+    and start_component("console", console::init)
+    and start_component("heap",    heap   ::init)
+    and start_component("sched",   sched  ::init) {
+        # Turn on timer interrupts.
+        asm$enable_interrupts()
+        # Enter user mode
+        asm$umode_switch() 
 
-    tree := rbtree$(char, int).create()
-    str := "mosinOS written in the bJou programming language"
-    for i := 0; i < cstrlen(str); i += 1 {
-        c := str[i]
-        write("inserting ")    writeln(c)
-        tree.insert(c, c as int)
+        # init does not exit
+        mkproc$process_init::init()
+
+        # spin and let processes take over
+        while true    { asm$wfi() }
     }
-    tree.write()
-    while true {
-        if first : (char ref, int ref) = tree.first() {
-            writeln(util::unref(first.0))
-            tree.remove(first.0)
-            # tree.write()
-        } else {
-            break
-        }
+    
+    abort("Boot failure.")
+}
+
+proc start_component(comp_name : char*, ini : <() : (error | none)>) : bool {
+    status := ini()
+    init_message(comp_name, status)
+
+    if err : error = status { return false }
+    return true
+}
+
+proc init_message(comp_name : char*, status : (error | none)) {
+    buff : char[32]
+    buff[0] = 0
+    cstrcat(buff, "[ ")
+    cstrcat(buff, comp_name)
+    for i := 0; i < 7 - cstrlen(comp_name); i += 1
+        cstrcat(buff, " ")
+    cstrcat(buff, " ] ")
+
+    write(buff)
+
+    if err : error = status {
+        write("ERROR (")  write(err.code)  write(") ")  writeln(err.msg)
+    } else {
+        writeln("Ok.")
     }
-    tree.destroy()
-
-    writeln("We booted.")
-
-    while true    asm$wfi()
 }

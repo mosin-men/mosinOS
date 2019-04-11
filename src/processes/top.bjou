@@ -1,0 +1,51 @@
+# top.bjou
+
+module process_top
+
+using import "syscall.bjou"
+using import "cstr.bjou"
+using import "util.bjou"
+using import "sched.bjou"
+using import "PCB.bjou"
+
+type top {
+    const STACK_SIZE := 512
+    const QM         := 1
+    const PROC_NAME  := "top"
+
+    proc routine(data : void*, data_len : u32) {
+        array := u32_to_ptr$(PCB*)(syscall::procs())
+        ptr   := array
+
+        if data_len >= 2 {
+            pid := atoi(data as char*) 
+            found := false
+            for ; @ptr != (NULL as PCB*); ptr += 1 {
+                if (@ptr).pid == pid {
+                    writeln("PID   VRUNTIME(QM)   TIME(s)   CMD")
+                    print_proc_info((@ptr).pid, (@ptr).vruntime, (@ptr).name)
+                    found = true
+                    break
+                }
+            }
+            if not found    { write("top: pid ")  write(pid)  writeln(" not found.") }
+        } else {
+            writeln("PID   VRUNTIME(QM)   TIME(s)   CMD")
+            for ; @ptr != (NULL as PCB*); ptr += 1
+                print_proc_info((@ptr).pid, (@ptr).vruntime, (@ptr).name)
+        }
+
+        syscall::free(array)
+    }
+}
+
+proc print_proc_info(pid : i32, vruntime : u32, name : char*) {
+    buff : char[32]
+    itoa(pid, buff)
+    writepad(buff, 3)  write("   ")
+    itoa(vruntime, buff)
+    writepad(buff, 12)  write("   ")
+    itoa(vruntime / sched::QMS_PER_SEC, buff)
+    writepad(buff, 7)  write("   ")
+    writeln(name)
+}

@@ -1,0 +1,15 @@
+# loop.bjou
+
+module process_loop
+
+using import "asm.bjou"
+
+type loop {
+    const STACK_SIZE := 128
+    const QM         := 8
+    const PROC_NAME  := "loop"
+
+    proc routine(data : void*, data_len : u32) {
+        while true asm$wfi()
+    }
+}

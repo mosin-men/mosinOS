@@ -57,26 +57,26 @@ type rbtree_node$(K_T, V_T) {
         kfree(&this)
     }
 
-    proc write(this, lvl : int) {
-        if this.child(1) != this.NULL_NODE {
-            (@this.child(1)).write(lvl + 1)
-        }
+    # proc write(this, lvl : int) {
+    #     if this.child(1) != this.NULL_NODE {
+    #         (@this.child(1)).write(lvl + 1)
+    #     }
 
-        for i := 0; i < 2 * lvl; i += 1 { write(" ") }
+    #     for i := 0; i < 2 * lvl; i += 1 { write(" ") }
 
-        write(this.key)
-        if this.parent == this.NULL_NODE {
-            write(" = ")
-            writeln(this.val)
-        } else {
-            write("(")  write(this.parent.key)  write(") = ")
-            writeln(this.val)
-        }
+    #     write(this.key)
+    #     if this.parent == this.NULL_NODE {
+    #         write(" = ")
+    #         writeln(this.val)
+    #     } else {
+    #         write("(")  write(this.parent.key)  write(") = ")
+    #         writeln(this.val)
+    #     }
         
-        if this.child(0) != this.NULL_NODE {
-            (@this.child(0)).write(lvl + 1)
-        }
-    }
+    #     if this.child(0) != this.NULL_NODE {
+    #         (@this.child(0)).write(lvl + 1)
+    #     }
+    # }
 
     proc rotate(node : rbtree_node$(K_T, V_T)*, dir : u32) : rbtree_node$(K_T, V_T)* {
         result := rbtree_node$(K_T, V_T).NULL_NODE
@@ -135,13 +135,13 @@ type rbtree$(K_T, V_T) {
         }
     }
 
-    proc write(this) {
-        write("------------------ TREE (")  write(this.len as i32)  writeln(" nodes) ------------------")
-        if this.root != this.NULL_NODE {
-            (@this.root).write(0)
-        }
-        writeln("-----------------------------------------------------")
-    }
+    # proc write(this) {
+    #     write("------------------ TREE (")  write(this.len as i32)  writeln(" nodes) ------------------")
+    #     if this.root != this.NULL_NODE {
+    #         (@this.root).write(0)
+    #     }
+    #     writeln("-----------------------------------------------------")
+    # }
 
     proc insert(this, key : K_T, val : V_T) {
         node       := this.NULL_NODE

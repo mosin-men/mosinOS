@@ -1,0 +1,21 @@
+# PCB.bjou
+# 
+# Process control block
+
+module PCB
+
+externvar GLOBAL_CTX : u32[32]
+
+type PCB {
+    context       : u32[32]
+    pc            : u32
+    vruntime      : u32
+    QM            : u8
+    pid           : u16
+    stack_size    : u16
+    stack_pointer : u32
+    name          : char*
+    kill          : bool
+    waitpid       : i16
+    sleep         : i16
+}

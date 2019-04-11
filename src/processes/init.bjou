@@ -1,0 +1,30 @@
+# init.bjou
+#
+# The first process the OS starts. Parent to all subsequent processes.
+
+module process_init
+
+using import "asm.bjou"
+using import "console.bjou"
+using import "syscall.bjou"
+
+using import "processes/mkproc.bjou"
+import "processes/sh.bjou"
+
+type init {
+    const STACK_SIZE := 512
+    const QM         := 4
+    const PROC_NAME  := "init"
+
+    proc routine(data : void*, data_len : u32) {
+        sh_pid := mkproc$process_sh::sh("MosinOS", 8)
+
+        if sh_pid == -1 {
+            writeln("init: Failed to start sh process.")
+        } else {
+            write("init: Started sh (pid ")
+            write(sh_pid)  writeln(").")
+        }
+        while true    { asm$wfi() }
+    }
+}

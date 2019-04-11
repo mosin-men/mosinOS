@@ -1,0 +1,33 @@
+# mkproc.bjou
+#
+# Create a new process using a predefined interface.
+
+module mkproc
+
+using import "sched.bjou"
+using import "util.bjou"
+using import "syscall.bjou"
+
+using import "processes/init.bjou"
+using import "processes/sh.bjou"
+using import "processes/echo.bjou"
+using import "processes/loop.bjou"
+using import "processes/top.bjou"
+
+proc routine_exit_wrapper$T(data : void*, data_len : u32) {
+    T.routine(data, data_len)
+    syscall::exit()
+}
+
+proc mkproc$T() : i32
+    return mkproc$T(NULL, 0)
+
+proc mkproc$T(data : void*, data_len : u32) : i32 {
+    return syscall::spawn(
+            T.STACK_SIZE,
+            (routine_exit_wrapper$T as void*) as u32,
+            T.QM,
+            data,
+            data_len,
+            T.PROC_NAME)
+}

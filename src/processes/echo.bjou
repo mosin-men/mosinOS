@@ -1,0 +1,16 @@
+# echo.bjou
+
+module process_echo
+
+using import "console.bjou"
+using import "asm.bjou"
+
+type echo {
+    const STACK_SIZE := 256
+    const QM         := 1
+    const PROC_NAME  := "echo"
+
+    proc routine(data : void*, data_len : u32) {
+        writeln(data as char*)
+    }
+}

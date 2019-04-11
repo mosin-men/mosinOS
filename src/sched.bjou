@@ -1,0 +1,283 @@
+# sched.bjou
+#
+# Completely Fair scheduler
+
+module sched
+
+using import "error.bjou"
+using import "none.bjou"
+using import "machine_info.bjou"
+using import "heap.bjou"
+using import "PCB.bjou"
+using import "rbtree.bjou"
+using import "util.bjou"
+using import "mem.bjou"
+using import "abort.bjou"
+
+using import "console.bjou"
+
+sched : scheduler
+
+proc init() : (error | none) {
+    sched = scheduler.create()
+    if not sched.init()
+        return { error: .code = 1, .msg = "Failed to create process tree." }
+    return { none: }
+}
+
+const NULL_PROC := NULL as PCB*
+
+type proc_tree_t = rbtree$(u32, PCB*)
+
+type scheduler {
+    current   : PCB*
+    proc_tree : proc_tree_t*
+    next_pid  : i16
+
+    proc create() : scheduler
+        return { scheduler: }
+
+    proc init(this) : bool {
+        tree_ptr := kmalloc(sizeof proc_tree_t)
+        if tree_ptr == NULL
+            return false
+        this.proc_tree = tree_ptr as proc_tree_t*
+
+        @this.proc_tree = proc_tree_t.create()
+
+        reset_timers()
+        return true
+    }
+
+    proc update_schedule(this, mepc : u32) : u32 {
+        # write("update_schedule(")  writehex(mepc)  writeln(")")
+
+        if this.current == NULL_PROC {
+            # writeln("CURRENT IS STILL NULL")
+            mepc_sav := mepc
+            mepc      = this.schedule_next(mepc)
+            return mepc
+        }
+        
+        # writeln("updating current and adding to tree")
+        mcopy(this.current.context, GLOBAL_CTX, (sizeof u32) * 32)        
+        this.current.vruntime += this.current.QM
+        this.current.pc        = mepc
+
+        this.add_to_tree(this.current.vruntime, this.current)
+
+        return this.schedule_next(mepc)
+    }
+
+    proc schedule_next(this, mepc : u32) : u32 {
+        # write("schedule_next(")  writehex(mepc)  writeln(")")
+        waiting   := kmalloc(this.proc_tree.len * sizeof PCB*) as PCB**
+        n_waiting := 0
+
+        if waiting == NULL as PCB**    { abort("Could not allocate waiting list.") }
+
+        all_pcbs  := this.collect_all_procs()
+
+        while true {
+            # writeln("searching for process to schedule")
+            if p : (u32 ref, PCB* ref) = (@this.proc_tree).first() {
+                # write("found process ")  writehexln(p.1)
+                (@this.proc_tree).remove(p.0)
+                if not p.1.kill {
+                    # write("scheduling ")  writehexln(p.1)
+                    if p.1.waitpid != -1i16 {
+                        # write("found a waiting process ") writeln(p.1.pid as i32)
+                        if scheduler.array_of_pcbs_has_pid(all_pcbs, p.1.waitpid) {
+                            # write(p.1.pid as i32)  write(" still waiting on ")  writeln(p.1.waitpid as i32)
+                            waiting[n_waiting] = p.1
+                            n_waiting += 1
+                        } else {
+                            # write("restoring waiting process ") writeln(p.1.pid as i32)
+                            this.current         = p.1
+                            this.current.waitpid = -1i16
+                            break
+                        }
+                    } else if p.1.sleep <= 0 {
+                        this.current = p.1
+                        break
+                    } else {
+                        # write(p.1.pid as i32)  write(" is sleeping -- ")  write(p.1.sleep as i32)  writeln(" QMs left.")
+                        waiting[n_waiting] = p.1
+                        n_waiting += 1
+                    }
+                }
+                # writehex(p.1)  writeln(" should die -- killing")
+            } else {
+                # writeln("no process to schedule")
+                if all_pcbs != (NULL as PCB**)
+                    kfree(all_pcbs)
+                kfree(waiting)
+                return mepc
+            }
+        }
+
+        for i := 0; i < n_waiting; i += 1 {
+            this.add_to_tree(waiting[i].vruntime, waiting[i])
+        }
+        for ptr := all_pcbs; @ptr != (NULL as PCB*); ptr += 1    { (@ptr).sleep -= 1 }
+
+        # writeln("filling out GLOBAL_CTX")
+        mcopy(GLOBAL_CTX, this.current.context, (sizeof u32) * 32)        
+        # write("new pc: ")  writehexln(this.current.pc)
+
+        if all_pcbs != (NULL as PCB**)
+            kfree(all_pcbs)
+        kfree(waiting)
+        return this.current.pc
+    }
+
+    proc new_process(this, stack_size : u32, ip : u32, QM : u32, data : void*, data_len : u32, name : char*) : i32 {
+        # writeln("new_process()")
+        # write("Size of PCB struct: ")  writeln((sizeof PCB) as i32)
+        pcb      := kmalloc(sizeof PCB) as PCB*
+        stack    := kmalloc(stack_size)
+        data_dst := NULL
+
+        # write("pcb:   ")  writehexln(pcb)
+        # write("stack: ")  writehexln(stack)
+        # write("pc:    ")  writehexln(ip)
+
+        if data == NULL {
+            data_len = 0
+            data_dst = stack + stack_size
+        } else {
+            data_dst = stack + stack_size - data_len
+            mcopy(data_dst, data, data_len)
+        }
+
+        pcb.context[10]   = data_dst as u32
+        pcb.context[11]   = data_len
+        pcb.context[2]    = data_dst as u32
+        pcb.stack_pointer = stack as u32
+        pcb.name          = name
+        pcb.pid           = this.next_pid
+        pcb.vruntime      = 0
+        pcb.pc            = ip
+        pcb.kill          = false
+        pcb.QM            = QM
+        pcb.waitpid       = -1i16
+        pcb.sleep         = 0
+
+        this.add_to_tree(pcb.vruntime, pcb)
+
+        this.next_pid += 1
+
+        return pcb.pid
+    }
+
+    proc add_to_tree(this, key : u32, val : PCB*) {
+        # writeln("add_to_tree()")
+        # write("tree len: ")  writeln(this.proc_tree.len as i32)
+        while true {
+            if n : none = (@this.proc_tree).lookup(key) {
+                # write("inserting ")
+                # write(key as i32)  writeln(" into proc tree")
+                (@this.proc_tree).insert(key, val)
+                break
+            }
+            # write("conflict found for key ")
+            # write(key as i32)  writeln(" -- trying next")
+            key += 1
+        }
+        # write("tree len: ")  writeln(this.proc_tree.len as i32)
+    }
+
+    proc _tree_get_node_with_pid(node : rbtree_node$(u32, PCB*)*, pid : i32) : rbtree_node$(u32, PCB*)* {
+        if node.val.pid == pid { return node }
+
+        if  node.children[0] != rbtree_node$(u32, PCB*).NULL_NODE {
+            l := scheduler._tree_get_node_with_pid(node.children[0], pid)
+            if l != rbtree_node$(u32, PCB*).NULL_NODE    { return l }
+        }
+
+        if  node.children[1] != rbtree_node$(u32, PCB*).NULL_NODE {
+            r := scheduler._tree_get_node_with_pid(node.children[1], pid)
+            if r != rbtree_node$(u32, PCB*).NULL_NODE    { return r }
+        }
+
+        return rbtree_node$(u32, PCB*).NULL_NODE
+    }
+    proc tree_has_pid(this, pid : i32) : bool {
+        return scheduler._tree_get_node_with_pid(this.proc_tree.root, pid) != rbtree_node$(u32, PCB*).NULL_NODE
+    }
+    proc get_pcb(this, pid : i32) : PCB* {
+        if this.current.pid == pid {
+            return this.current
+        }
+
+        node := scheduler._tree_get_node_with_pid(this.proc_tree.root, pid)
+
+        if node != rbtree_node$(u32, PCB*).NULL_NODE {
+            return node.val
+        }
+
+        return NULL as PCB*
+    }
+    proc _collect_all_procs(node : rbtree_node$(u32, PCB*)*, array : PCB**, idx : u32 ref) {
+        array[idx] = node.val
+        idx += 1
+
+        if node.children[0] != rbtree_node$(u32, PCB*).NULL_NODE {
+            scheduler._collect_all_procs(node.children[0], array, idx) 
+        }
+
+        if node.children[1] != rbtree_node$(u32, PCB*).NULL_NODE {
+            scheduler._collect_all_procs(node.children[1], array, idx) 
+        }
+    }
+
+    proc collect_all_procs(this) : PCB** {
+        n := this.proc_tree.len + 1
+        if this.current != (NULL as PCB*)
+            n += 1
+        array := kmalloc(n * sizeof PCB*) as PCB**
+
+        idx := 0u32
+        if this.current != (NULL as PCB*) {
+            array[0] = this.current
+            idx += 1
+        }
+
+        scheduler._collect_all_procs(this.proc_tree.root, array, idx)
+
+        array[idx] = NULL as PCB*
+
+        return array
+    }
+
+    proc array_of_pcbs_has_pid(array : PCB**, pid : i32) : bool {
+        for ptr := array; @ptr != (NULL as PCB*); ptr += 1 {
+            if (@ptr).pid == pid
+                return true
+        }
+        return false
+    }
+}
+
+const QMS_PER_SEC := 100
+
+proc reset_timers() {
+    mlo    := get_clint_register(clint::MTIMELO)
+    mhi    := get_clint_register(clint::MTIMEHI)
+    mcmplo := get_clint_register(clint::MTIMECMPLO)
+    mcmphi := get_clint_register(clint::MTIMECMPHI)
+
+    cur_mlo : u32 = mlo
+    cur_mhi : u32 = mhi
+
+    interval := FREQ / QMS_PER_SEC
+
+    mtime64 := ((cur_mhi as u64) bshl 32) + (cur_mlo as u64)
+    mtimecmp64 := mtime64 + interval
+    new_mtimecmphi := (mtimecmp64 bshr 32) as u32
+    new_mtimecmplo := (mtimecmp64 band 0x00000000FFFFFFFF) as u32
+
+    mcmplo = new_mtimecmplo
+    mcmphi = new_mtimecmphi
+
+}

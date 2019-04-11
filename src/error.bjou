@@ -1,0 +1,10 @@
+# error.bjou
+#
+# simple error wrapping type
+
+module error
+
+type error {
+    code : i32
+    msg  : char*
+}

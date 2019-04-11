@@ -22,6 +22,8 @@ module heap
 
 using import "console.bjou"
 using import "util.bjou"
+using import "error.bjou"
+using import "none.bjou"
 
 const HEAP_NULL := (0x0 as void*) as u32*
 
@@ -52,7 +54,7 @@ const max_block_size := (1u32 bshl 15u32) * 4u32
 # Initialize the heap by simply creating a single free node
 # at the beginning of the heap, which is at __heap_start.
 
-proc init() {
+proc init() : (error | none) {
     heap_sz := ptr_to_u32(&__heap_size)
     ptr     := &__heap_start # pointer to start of heap
 
@@ -70,6 +72,8 @@ proc init() {
     # write(", size: ")
     # writehex(ptr_to_u32(&__heap_size))
     # writeln()
+    
+    return { none: }
 }
 
 # Returns either:

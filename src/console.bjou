@@ -14,10 +14,15 @@ import "defs.bjou"
 import "uart.bjou"
 using import "cstr.bjou"
 using import "util.bjou"
+using import "error.bjou"
+using import "none.bjou"
 
 _con       : console
 
-proc init() { _con = console.create() }
+proc init() : (error | none) {
+    _con = console.create()
+    return { none: }
+}
 
 type console {
     array : int[2]
@@ -90,6 +95,16 @@ proc write(c : char) {
 
 proc write(s : char*) {
     _con.write(s)
+}
+
+proc writepad(s : char*, l : u32) {
+    len := cstrlen(s)
+    _con.write(s)
+    if len < l {
+        for i := 0; i < l - len; i += 1 {
+            _con.write(' ')
+        }
+    }
 }
 
 proc write(i : i32) {

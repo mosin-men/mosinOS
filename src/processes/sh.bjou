@@ -1,0 +1,98 @@
+# sh.bjou
+#
+# shell process
+
+module process_sh
+
+using import "console.bjou"
+using import "syscall.bjou"
+using import "cstr.bjou"
+
+using import "processes/mkproc.bjou"
+using import "processes/echo.bjou"
+using import "processes/loop.bjou"
+using import "processes/sleep.bjou"
+using import "processes/kill.bjou"
+using import "processes/top.bjou"
+
+type sh {
+    const STACK_SIZE := 1024
+    const QM         := 1
+    const PROC_NAME  := "sh"
+
+    proc routine(data : void*, data_len : u32) {
+        buff := syscall::alloc(128) as char*
+
+        while true {
+            get_input(data as char*, buff)
+            line         := trim_spc(buff)
+            spc_idx      := find_space(line)
+            line[spc_idx] = 0
+            prg          := buff as char*
+            arg_data     := line + spc_idx + 1
+            wait         := true
+
+            if prg[0] == '&' {
+                wait = false
+                prg += 1
+            }
+
+            if      cstrcmp(prg, "echo")  == 0 { exec $ echo(wait, arg_data)                 }
+            else if cstrcmp(prg, "sh")    == 0 { exec $ sh(wait, arg_data)                   }
+            else if cstrcmp(prg, "loop")  == 0 { exec $ loop(wait, arg_data)                 }
+            else if cstrcmp(prg, "sleep") == 0 { exec $ process_sleep::sleep(wait, arg_data) }
+            else if cstrcmp(prg, "kill")  == 0 { exec $ process_kill::kill(wait, arg_data)   }
+            else if cstrcmp(prg, "top")   == 0 { exec $ top(wait, arg_data)                  }
+            else if cstrcmp(prg, "clear") == 0 { for i := 0; i < 100; i += 1    writeln()    }
+            else if cstrcmp(prg, "help")  == 0 { print_help()                                }
+            else if cstrcmp(prg, "exit")  == 0 { break                                       }
+            else                               { write("unknown process/command '")
+                                                 write(prg)
+                                                 writeln("'")                                }
+        }
+
+        syscall::free(buff)
+    }
+}
+
+proc exec$T(wait : bool, data : char*) {
+    pid := mkproc$T(data, cstrlen(data) + 1)
+
+    if wait    { syscall::waitpid(pid) }
+    else       { writeln(pid) }
+}
+
+proc trim_spc(line : char*) : char* {
+    while @line == ' ' { line += 1 }
+    return line
+}
+
+proc find_space(line : char*) : u32 {
+    line_sav := line
+    while @line and @line != ' ' { line += 1 }
+    return line - line_sav
+}
+
+proc get_input(prompt : char*, buff : char*) {
+    write(prompt)  write(" $ ")
+    readln(buff)
+    l := cstrlen(buff) - 1
+    buff[l] = 0
+}
+
+proc print_help() {
+    writeln(
+"Available processes are:
+(prefix with & to start in background)
+    sh [PROMPT]       this shell
+    echo TEXT         write text back to the console
+    loop              spinning process
+    sleep SECONDS     sleeping process
+    kill PID          kill a process
+    top [PID]         view active processes
+   
+Available commands are:
+    exit              leave the shell
+    clear             clear the screen
+    help              show this help info")
+}

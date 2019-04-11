@@ -3,6 +3,7 @@
 .global GLOBAL_CTX
 .lcomm GLOBAL_CTX, 128
 
+
 .altmacro
 .macro sv z, target=t6
   sw x\z, ((\z)*4)(\target)
@@ -35,26 +36,34 @@ _trap_handler:
   csrr t6, mscratch
   sv 31, t5
 #jump to trap_handler in rust
+  la x2, __kstack
   csrr a0, mcause
   csrr a1, mepc
-  call trap_handler
+  csrr a2, mtval
+  call trap_handler 
   csrw mepc, a0
 
 # restore t6 register 
-# and save to mscratch
-  la t5, GLOBAL_CTX
-  lv 31, t5
-  csrw mscratch, t6
-
 #restore other registers
   la t6, GLOBAL_CTX
   .set i, 0
-  .rept 31
+  .rept 32
     lv %i
     .set i, i+1
   .endr
 
-#restore t6 from mscratch
-  csrr t6, mscratch
   mret
-#DO RETURN STUFF HERE
+
+.align 4
+.global _UMODE_SWITCH
+_UMODE_SWITCH:
+  li t5, 0x1800
+  csrrc zero, mstatus, t5
+  ret
+
+.align 4
+.global _MMODE_SWITCH
+_MMODE_SWITCH:
+  li t5, 0x1800
+  csrrs zero, mstatus, t5
+  ret

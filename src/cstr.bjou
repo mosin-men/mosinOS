@@ -135,3 +135,12 @@ proc itoab(u : u32, a : char*) {
     }
     a[32] = '\0'
 }
+
+proc atoi(a : char*) : i32 {
+    res := 0
+   
+    for i := 0; a[i]; i += 1 
+        res = res * 10 + (a[i] as u8 - '0' as u8) as i32
+
+    return res
+}
