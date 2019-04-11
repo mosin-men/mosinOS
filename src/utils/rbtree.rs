@@ -35,11 +35,11 @@ macro_rules! NULL {
 }
 
 pub struct rbtree_node<K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> {
-    red      : bool,
-    children : [ *mut Self; 2],
-    parent   : *mut Self,
-    key      : K_T,
-    val      : V_T
+    pub red      : bool,
+    pub children : [ *mut Self; 2],
+    pub parent   : *mut Self,
+    pub key      : K_T,
+    pub val      : V_T
 }
 
 impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> rbtree_node<K_T, V_T> {
@@ -120,8 +120,8 @@ impl <K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debu
 }
 
 pub struct rbtree<K_T : Clone + PartialOrd + core::fmt::Debug, V_T : Clone + core::fmt::Debug> {
-    root : *mut rbtree_node<K_T, V_T>,
-    beg  : *mut rbtree_node<K_T, V_T>,
+    pub root : *mut rbtree_node<K_T, V_T>,
+    pub beg  : *mut rbtree_node<K_T, V_T>,
     pub len  : usize
 }
 

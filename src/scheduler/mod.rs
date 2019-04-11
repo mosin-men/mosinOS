@@ -1,6 +1,6 @@
 use crate::console;
 use crate::machine_info::{*};
-use crate::utils::rbtree::rbtree;
+use crate::utils::rbtree::{ rbtree, rbtree_node };
 use core::fmt::Write;
 use core::ptr::null;
 use crate::mem::heap::{*};
@@ -17,17 +17,19 @@ pub struct PCB {
     pc                 :  u32,
     vruntime           :  u32,
     QM                 :  u32,
-    pid                :  u32,
+    pid                :  i32,
     stack_size         :  u32,
     stack_pointer      :  u32,
+    name               :  &'static str,
     kill               :  bool,
+    waitpid            :  i32,
+    sleep              :  i16,
 }
 
 pub struct scheduler {
     current: *mut PCB,
     schedule: *mut rbtree<u32, *mut PCB>,
-    next_pid: u32,
-    q_count: u32,
+    next_pid: i32,
 }
 
 impl scheduler {
@@ -36,11 +38,10 @@ impl scheduler {
             current: core::ptr::null::<PCB>() as *mut PCB,
             schedule: core::ptr::null::<rbtree<u32, *mut PCB>>() as *mut rbtree<u32, *mut PCB>,
             next_pid: 0,
-            q_count: 0,
         }
     }
 
-    pub fn init(&mut self){
+    pub fn init(&mut self) {
         scheduler::reset_timers();
         self.schedule = kmalloc(core::mem::size_of::<rbtree<u32, *mut PCB>>() as u32)
                    as *mut rbtree<u32, *mut PCB>;
@@ -50,7 +51,6 @@ impl scheduler {
     }
 
     pub unsafe fn update_schedule(&mut self, mut mepc: u32)-> u32 {
-        self.q_count += 5;
         (*self.schedule).print();
         if self.current.is_null() { 
             println!("CURRENT WAS NULL -- looking for process");
@@ -62,46 +62,193 @@ impl scheduler {
             scheduler::reset_timers();
             return mepc; 
         }
-        (*self.current).context  = GLOBAL_CTX;
+        (*self.current).context   = GLOBAL_CTX;
+        (*self.current).vruntime += (*self.current).QM;
         (*self.current).pc       = mepc;
-        (*self.current).vruntime = ((*self).q_count + (*self.current).pid) * (*self.current).QM;
+
         (*self.schedule).insert((*self.current).vruntime, self.current);
 
         return self.schedule_next(mepc);
     }
 
     pub unsafe fn schedule_next(&mut self, mut mepc: u32) -> u32 {
+        let waiting = kmalloc(((*self.schedule).len as u32) * core::mem::size_of::<*mut PCB>() as u32)
+                        as *mut *mut PCB;
+        let mut n_waiting = 0;
+
+        let all_pcbs = self.collect_all_procs();
+
         loop {
             if let Some((time, pcb)) = (*self.schedule).first() {
                 (*self.schedule).delete(*time);
                 if !(*(*pcb)).kill {
-                    self.current = *pcb;
-                    break;
+                    if (*(*pcb)).waitpid != -1 {
+                        if scheduler::array_of_pcbs_has_pid(all_pcbs, (*(*pcb)).waitpid) {
+                            *waiting.offset(n_waiting) = *pcb;
+                            n_waiting += 1;
+                        } else {
+                            self.current = *pcb;
+                            (*self.current).waitpid = -1;
+                            break;
+                        }
+                    } else if (*(*pcb)).sleep <= 0 {
+                        self.current = *pcb;
+                        break;
+                    } else {
+                        *waiting.offset(n_waiting) = *pcb;
+                        n_waiting += 1;
+                    }
                 }
-            }else{
+            } else {
+                if !all_pcbs.is_null() {
+                    kfree(all_pcbs as *mut u32);
+                }
+                kfree(waiting as *mut u32);
                 return mepc;
             }
         }
+
+        for i in 0..n_waiting {
+            self.add_to_tree((*(*waiting.offset(i))).vruntime, *waiting.offset(i));
+        }
+        let mut ptr = all_pcbs;
+        while !(*ptr).is_null() {
+            (*(*ptr)).sleep -= 1;
+            ptr = ptr.offset(1)
+        }
+
         GLOBAL_CTX = (*self.current).context;
-        scheduler::reset_timers();
+        
+        if !all_pcbs.is_null() {
+            kfree(all_pcbs as *mut u32);
+        }
+
+        kfree(waiting as *mut u32);
+
         return (*self.current).pc;
     }
 
-    pub unsafe fn new_process(&mut self, stack_size: u32, ip: u32, QM: u32) -> u32 {
+    pub unsafe fn new_process(&mut self, stack_size: u32, ip: u32, QM: u32, data : *mut u32, mut data_len : u32) -> i32 {
         let pcb: *mut PCB = kmalloc(core::mem::size_of::<PCB>() as u32) as *mut PCB;
         let stack: *mut u32 = kmalloc(stack_size);
+        let mut data_dst = core::ptr::null::<u32>() as *mut u32;
+
+        if data.is_null() {
+            data_len = 0;
+            data_dst = stack.offset(stack_size as isize);
+        } else {
+            data_dst = stack.offset((stack_size - data_len) as isize);
+            core::ptr::copy_nonoverlapping(data, data_dst, data_len as usize);
+        }
+
 //        (*pcb).context[1] = ra as u32; //function pointer to return address
+        (*pcb).context[10] = data_dst as u32;
+        (*pcb).context[11] = data_len;
         (*pcb).context[2] = stack as u32 + stack_size;
         (*pcb).stack_pointer = stack as u32;
         (*pcb).pid           = self.next_pid;
-        (*pcb).vruntime      = self.q_count + ((*self.schedule).len as u32);
+        (*pcb).vruntime      = ((*self.schedule).len as u32);
         (*pcb).pc            = ip;
         (*pcb).kill          = false;
         (*pcb).QM            = QM;
+        (*pcb).waitpid       = -1;
+        (*pcb).sleep         = 0;
 
         (*self.schedule).insert((*pcb).vruntime, pcb);
         self.next_pid += 1;
         return (*pcb).pid;
+    }
+
+    unsafe fn add_to_tree(&mut self, mut key : u32, val : *mut PCB) {
+        loop {
+            if let None = (*self.schedule).lookup(key) {
+                (*self.schedule).insert(key, val);
+                break;
+            }
+
+            key += 1;
+        }
+    }
+
+    unsafe fn _tree_get_node_with_pid(node : *mut rbtree_node<u32, *mut PCB>, pid : i32) -> *mut rbtree_node<u32, *mut PCB> {
+        if (*(*node).val).pid == pid { return node; }
+
+        if !(*node).children[0].is_null() {
+            let l = scheduler::_tree_get_node_with_pid((*node).children[0], pid);
+            if !l.is_null() { return l; }
+        }
+        
+        if !(*node).children[1].is_null() {
+            let r = scheduler::_tree_get_node_with_pid((*node).children[1], pid);
+            if !r.is_null() { return r; }
+        }
+
+        return core::ptr::null::<rbtree_node<u32, *mut PCB>>() as *mut rbtree_node<u32, *mut PCB>;
+    }
+
+    unsafe fn tree_has_pid(&mut self, pid : i32) -> bool {
+        return scheduler::_tree_get_node_with_pid((*self.schedule).root, pid).is_null();
+    }
+
+    unsafe fn get_pcb(&mut self, pid : i32) -> *mut PCB {
+        if (*self.current).pid == pid {
+            return self.current;
+        }
+
+        let node = scheduler::_tree_get_node_with_pid((*self.schedule).root, pid);
+
+        if !node.is_null() {
+            return (*node).val;
+        }
+
+        return core::ptr::null::<PCB>() as *mut PCB;
+    }
+
+    unsafe fn _collect_all_procs(node : *mut rbtree_node<u32, *mut PCB>, array : *mut *mut PCB, idx : &mut u32) {
+        *array.offset(*idx as isize) = (*node).val;
+
+        *idx += 1;
+
+        if !(*node).children[0].is_null() {
+            scheduler::_collect_all_procs((*node).children[0], array, idx);
+        }
+        if !(*node).children[1].is_null() {
+            scheduler::_collect_all_procs((*node).children[1], array, idx);
+        }
+    }
+
+    unsafe fn collect_all_procs(&mut self) -> *mut *mut PCB {
+        let mut n = (*self.schedule).len;
+        if !self.current.is_null() {
+            n += 1;
+        }
+
+        let array = kmalloc(n as u32 * core::mem::size_of::<*mut PCB>() as u32) as *mut *mut PCB;
+
+        let mut idx = 0;
+        if !self.current.is_null() {
+            *array.offset(0) = self.current;
+            n += 1;
+        }
+
+        scheduler::_collect_all_procs((*self.schedule).root, array, &mut idx);
+
+        *array.offset(idx as isize) = core::ptr::null::<PCB>() as *mut PCB;
+
+        return array;
+    }
+
+    unsafe fn array_of_pcbs_has_pid(array : *mut *mut PCB, pid : i32) -> bool {
+        let mut ptr = array;
+
+        while !(*ptr).is_null() {
+            if (*(*ptr)).pid == pid {
+                return true;
+            }
+            ptr = ptr.offset(1);
+        }
+
+        return false;
     }
 
     fn reset_timers() {

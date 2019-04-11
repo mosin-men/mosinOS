@@ -123,8 +123,8 @@ fn main() -> () {
     unsafe{
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
-      scheduler::sched.new_process(1000, proc_a as u32, 1);
-      scheduler::sched.new_process(1000, proc_b as u32, 1);
+      // scheduler::sched.new_process(1000, proc_a as u32, 1);
+      // scheduler::sched.new_process(1000, proc_b as u32, 1);
       asm!("wfi");
     }
 
