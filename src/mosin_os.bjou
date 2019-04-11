@@ -38,14 +38,25 @@ proc __no_mangle__ main() {
         # Enter user mode
         asm$umode_switch() 
 
-        # init does not exit
-        mkproc$process_init::init()
-
-        # spin and let processes take over
-        while true    { asm$wfi() }
+        if start_component("init", init_init) {
+            # spin and let processes take over
+            while true    { asm$wfi() }
+        }
     }
     
     abort("Boot failure.")
+}
+
+proc init_init() : (error | none) {
+    pid := mkproc$process_init::init()
+    if pid == -1 {
+        return { error:
+            .code = 1,
+            .msg = "Could not start 'init' process."
+        }
+    }
+
+    return { none: }
 }
 
 proc start_component(comp_name : char*, ini : <() : (error | none)>) : bool {
@@ -57,15 +68,7 @@ proc start_component(comp_name : char*, ini : <() : (error | none)>) : bool {
 }
 
 proc init_message(comp_name : char*, status : (error | none)) {
-    buff : char[32]
-    buff[0] = 0
-    cstrcat(buff, "[ ")
-    cstrcat(buff, comp_name)
-    for i := 0; i < 7 - cstrlen(comp_name); i += 1
-        cstrcat(buff, " ")
-    cstrcat(buff, " ] ")
-
-    write(buff)
+    write("[ ") writepad(comp_name, 7)  write(" ] ")
 
     if err : error = status {
         write("ERROR (")  write(err.code)  write(") ")  writeln(err.msg)

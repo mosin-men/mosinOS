@@ -12,7 +12,10 @@ using import "processes/init.bjou"
 using import "processes/sh.bjou"
 using import "processes/echo.bjou"
 using import "processes/loop.bjou"
+using import "processes/kill.bjou"
+using import "processes/sleep.bjou"
 using import "processes/top.bjou"
+using import "processes/calc.bjou"
 
 proc routine_exit_wrapper$T(data : void*, data_len : u32) {
     T.routine(data, data_len)

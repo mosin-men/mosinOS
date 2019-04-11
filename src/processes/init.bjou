@@ -21,9 +21,6 @@ type init {
 
         if sh_pid == -1 {
             writeln("init: Failed to start sh process.")
-        } else {
-            write("init: Started sh (pid ")
-            write(sh_pid)  writeln(").")
         }
         while true    { asm$wfi() }
     }
