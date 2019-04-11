@@ -53,17 +53,3 @@ _trap_handler:
   .endr
 
   mret
-
-.align 4
-.global _UMODE_SWITCH
-_UMODE_SWITCH:
-  li t5, 0x1800
-  csrrc zero, mstatus, t5
-  ret
-
-.align 4
-.global _MMODE_SWITCH
-_MMODE_SWITCH:
-  li t5, 0x1800
-  csrrs zero, mstatus, t5
-  ret

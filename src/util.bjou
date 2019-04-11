@@ -6,6 +6,9 @@ module util
 
 const NULL := 0x0 as void*
 
+proc is_null(ptr : void*) : bool
+    return ptr == NULL
+
 proc getref$T(val : T ref) : T ref
     return val
 

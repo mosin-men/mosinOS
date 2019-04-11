@@ -39,7 +39,7 @@ type scheduler {
 
     proc init(this) : bool {
         tree_ptr := kmalloc(sizeof proc_tree_t)
-        if tree_ptr == NULL
+        if tree_ptr.is_null()
             return false
         this.proc_tree = tree_ptr as proc_tree_t*
 
@@ -52,7 +52,7 @@ type scheduler {
     proc update_schedule(this, mepc : u32) : u32 {
         # write("update_schedule(")  writehex(mepc)  writeln(")")
 
-        if this.current == NULL_PROC {
+        if this.current.is_null() {
             # writeln("CURRENT IS STILL NULL")
             mepc_sav := mepc
             mepc      = this.schedule_next(mepc)
@@ -74,7 +74,7 @@ type scheduler {
         waiting   := kmalloc(this.proc_tree.len * sizeof PCB*) as PCB**
         n_waiting := 0
 
-        if waiting == NULL as PCB**    { abort("Could not allocate waiting list.") }
+        if waiting.is_null()    { abort("Could not allocate waiting list.") }
 
         all_pcbs  := this.collect_all_procs()
 
@@ -109,7 +109,7 @@ type scheduler {
                 # writehex(p.1)  writeln(" should die -- killing")
             } else {
                 # writeln("no process to schedule")
-                if all_pcbs != (NULL as PCB**)
+                if not all_pcbs.is_null()
                     kfree(all_pcbs)
                 kfree(waiting)
                 return mepc
@@ -119,13 +119,13 @@ type scheduler {
         for i := 0; i < n_waiting; i += 1 {
             this.add_to_tree(waiting[i].vruntime, waiting[i])
         }
-        for ptr := all_pcbs; @ptr != (NULL as PCB*); ptr += 1    { (@ptr).sleep -= 1 }
+        for ptr := all_pcbs; not (@ptr).is_null(); ptr += 1    { (@ptr).sleep -= 1 }
 
         # writeln("filling out GLOBAL_CTX")
         mcopy(GLOBAL_CTX, this.current.context, (sizeof u32) * 32)        
         # write("new pc: ")  writehexln(this.current.pc)
 
-        if all_pcbs != (NULL as PCB**)
+        if not all_pcbs.is_null()
             kfree(all_pcbs)
         kfree(waiting)
         return this.current.pc
@@ -142,7 +142,7 @@ type scheduler {
         # write("stack: ")  writehexln(stack)
         # write("pc:    ")  writehexln(ip)
 
-        if data == NULL {
+        if data.is_null() {
             data_len = 0
             data_dst = stack + stack_size
         } else {
@@ -190,20 +190,20 @@ type scheduler {
     proc _tree_get_node_with_pid(node : rbtree_node$(u32, PCB*)*, pid : i32) : rbtree_node$(u32, PCB*)* {
         if node.val.pid == pid { return node }
 
-        if  node.children[0] != rbtree_node$(u32, PCB*).NULL_NODE {
+        if not node.children[0].is_null() {
             l := scheduler._tree_get_node_with_pid(node.children[0], pid)
-            if l != rbtree_node$(u32, PCB*).NULL_NODE    { return l }
+            if not l.is_null()    { return l }
         }
 
-        if  node.children[1] != rbtree_node$(u32, PCB*).NULL_NODE {
+        if not node.children[1].is_null() {
             r := scheduler._tree_get_node_with_pid(node.children[1], pid)
-            if r != rbtree_node$(u32, PCB*).NULL_NODE    { return r }
+            if not r.is_null()    { return r }
         }
 
         return rbtree_node$(u32, PCB*).NULL_NODE
     }
     proc tree_has_pid(this, pid : i32) : bool {
-        return scheduler._tree_get_node_with_pid(this.proc_tree.root, pid) != rbtree_node$(u32, PCB*).NULL_NODE
+        return not scheduler._tree_get_node_with_pid(this.proc_tree.root, pid).is_null()
     }
     proc get_pcb(this, pid : i32) : PCB* {
         if this.current.pid == pid {
@@ -212,7 +212,7 @@ type scheduler {
 
         node := scheduler._tree_get_node_with_pid(this.proc_tree.root, pid)
 
-        if node != rbtree_node$(u32, PCB*).NULL_NODE {
+        if not node.is_null() {
             return node.val
         }
 
@@ -222,23 +222,23 @@ type scheduler {
         array[idx] = node.val
         idx += 1
 
-        if node.children[0] != rbtree_node$(u32, PCB*).NULL_NODE {
+        if not node.children[0].is_null() {
             scheduler._collect_all_procs(node.children[0], array, idx) 
         }
 
-        if node.children[1] != rbtree_node$(u32, PCB*).NULL_NODE {
+        if not node.children[1].is_null() {
             scheduler._collect_all_procs(node.children[1], array, idx) 
         }
     }
 
     proc collect_all_procs(this) : PCB** {
         n := this.proc_tree.len + 1
-        if this.current != (NULL as PCB*)
+        if not this.current.is_null()
             n += 1
         array := kmalloc(n * sizeof PCB*) as PCB**
 
         idx := 0u32
-        if this.current != (NULL as PCB*) {
+        if not this.current.is_null() {
             array[0] = this.current
             idx += 1
         }
@@ -251,7 +251,7 @@ type scheduler {
     }
 
     proc array_of_pcbs_has_pid(array : PCB**, pid : i32) : bool {
-        for ptr := array; @ptr != (NULL as PCB*); ptr += 1 {
+        for ptr := array; not (@ptr).is_null(); ptr += 1 {
             if (@ptr).pid == pid
                 return true
         }

@@ -36,7 +36,7 @@ type top {
                 print_proc_info(array[i].pid, array[i].vruntime, array[i].name, array[i].waitpid, array[i].sleep)
         }
 
-        if array != (NULL as process_info*)
+        if not array.is_null()
             syscall::free(array)
     }
 }
