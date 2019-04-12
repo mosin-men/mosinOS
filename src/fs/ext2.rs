@@ -252,6 +252,7 @@ impl Ext2FS {
        File inodes are handled differently. Since the type Ext2FS stores its
        current directory, each process using the filesystem must maintain its
        own instance of Ext2FS. This isn't really a problem. */
+    /* Equivalent to ls */
     unsafe fn _read_directory_inode(&self) {
         let inode_final = self._get_inode(self.c_inode);
         println!("inode type = {}", match ((*inode_final).mode & 0xF000) {

@@ -51,23 +51,17 @@ mod trap;
 mod syscalls;
 mod mem;
 mod scheduler;
-<<<<<<< HEAD
 mod libs;
-=======
 mod fs;
->>>>>>> ext2
 use crate::mem::heap::{*};
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
 use crate::mem::pmp::PMP_MODES as pmp_modes;
 use crate::utils::rbtree::rbtree;
-<<<<<<< HEAD
 use crate::syscalls::{do_msyscall, UMODE, MMODE, _MMODE_SWITCH, _UMODE_SWITCH};
 use crate::libs::syscalls::{*};
-=======
 use crate::fs::ext2 as ext2;
->>>>>>> ext2
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -178,14 +172,14 @@ fn main() -> () {
     scheduler::sched.init();
     }
     /* Turns on timer interrupts */
-    unsafe{
+    /*unsafe{
       let pid = scheduler::sched.new_process(2048, init as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "init".as_bytes().as_ptr() as *const char);
       println!("pid of init: {}", pid);
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
       mecall(0);
       loop { asm!("wfi"); }
-    }
+    }*/
 
 
     /* enter user mode */
