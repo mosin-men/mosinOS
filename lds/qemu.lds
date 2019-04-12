@@ -46,8 +46,10 @@ SECTIONS
     *(.rdata)
     *(.rodata .rodata.*)
     *(.gnu.linkonce.r.*)
+    *(.incbin)
+    PROVIDE(__fs_start = _ext2fs);
   } >flash AT>flash :flash
-
+  
   . = ALIGN(4);
 
   .preinit_array  :

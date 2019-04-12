@@ -51,15 +51,23 @@ mod trap;
 mod syscalls;
 mod mem;
 mod scheduler;
+<<<<<<< HEAD
 mod libs;
+=======
+mod fs;
+>>>>>>> ext2
 use crate::mem::heap::{*};
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
 use crate::mem::pmp::PMP_MODES as pmp_modes;
 use crate::utils::rbtree::rbtree;
+<<<<<<< HEAD
 use crate::syscalls::{do_msyscall, UMODE, MMODE, _MMODE_SWITCH, _UMODE_SWITCH};
 use crate::libs::syscalls::{*};
+=======
+use crate::fs::ext2 as ext2;
+>>>>>>> ext2
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -125,8 +133,45 @@ extern "C" {
 
 #[no_mangle]
 fn main() -> () {
-
     /* Initialize */
+    let mut fs = ext2::Ext2FS::init();
+    fs.get_fs_info();
+    fs.read_block_descriptors();
+    fs.read_directory_inode();
+    let mut t = fs.fs_cd("Blurrrrrrrrr");
+    println!("{}.", match t {
+        0   => "Directory change succeeded",
+        1   => "Target not a directory",
+        2   => "Target not present",
+        _   => "Undefined error",
+    });
+    t = fs.fs_cd("test.txt");
+    println!("{}.", match t {
+        0   => "Directory change succeeded",
+        1   => "Target not a directory",
+        2   => "Target not present",
+        _   => "Undefined error",
+    });
+    t = fs.fs_cd("test");
+    println!("{}.", match t {
+        0   => "Directory change succeeded",
+        1   => "Target not a directory",
+        2   => "Target not present",
+        _   => "Undefined error",
+    });
+    fs.read_directory_inode();
+    t = fs.fs_cd("..");
+    println!("{}.", match t {
+        0   => "Directory change succeeded",
+        1   => "Target not a directory",
+        2   => "Target not present",
+        _   => "Undefined error",
+    });
+    fs.read_directory_inode();
+    /*unsafe {
+        let ptr: *const u32 = &mut __fs_start as *const u32;
+        println!("{:p}", ptr);
+    }*/
     heap_init();
     console::init();
     unsafe{
@@ -148,11 +193,67 @@ fn main() -> () {
     // mecall(0);
     // }
 
+    /*unsafe{
+      asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
+      asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
+      scheduler::sched.new_process(1000, proc_a as u32, 1);
+      scheduler::sched.new_process(1000, proc_b as u32, 1);
+      asm!("wfi");
+    }*/
+
+
+    /*heap_print(16);
+    let ptr: *mut u32 = kmalloc(2);
+    let ptr2: *mut u32 = kmalloc(2);
+    let ptr3: *mut u32 = kmalloc(2);
+    heap_print(16);
+    kfree(ptr);
+    heap_print(16);
+    kfree(ptr3);
+    heap_print(16);
+    kfree(ptr2);
+    heap_print(16);
+    
+    mem::pmp::pmp_set(0, true, true, true, pmp_modes::TOR, 0x80000080);
+    mem::pmp::pmp_set(1, false, false, false, pmp_modes::TOR, 0x80000090);
+    mem::pmp::pmp_set(2, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(3, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(4, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(5, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(6, false, false, false, pmp_modes::OFF, 0x0);
+    mem::pmp::pmp_set(7, false, false, false, pmp_modes::OFF, 0x0);
+
+    let ptr: *mut u32 = kmalloc(16);
+    println!("ptr = {:#010X}", ptr as u32);
+    let ptr2: *mut u32 = 0 as *mut u32;
+    let pmpcfg0: u32;
+    let pmpcfg1: u32;
+    let pmpaddr0: u32;
+    let pmpaddr1: u32;
+    let mut mstatus : u32;
+    unsafe{
+        // asm!("li t1, 0x20000\ncsrs mstatus, t1":::"t1":"volatile");
+
+        asm!("csrr $0, pmpcfg0": "=r"(pmpcfg0));
+        asm!("csrr $0, pmpcfg1": "=r"(pmpcfg1));
+        asm!("csrr $0, pmpaddr0": "=r"(pmpaddr0));
+        asm!("csrr $0, pmpaddr1": "=r"(pmpaddr1));
+    }
+
+    println!("pmpcfg0: {:#010X}, pmpcfg1: {:#010X}, pmpaddr0: {:#010X}, pmpaddr1: {:#010X}", pmpcfg0, pmpcfg1, pmpaddr0, pmpaddr1);
+    msyscall(0);
+    syscall(0);
+    
+    unsafe{
+        ptr.write_volatile(8);
+        println!("ptr: {:p} value @ ptr: {}", ptr, ptr.read_volatile());
+    }*/
+    
     /* Hold the OS here */
-    // loop{
-    //     unsafe{
-    //         asm!("wfi");
-    //     }
-    // }
+    loop{
+        unsafe{
+            asm!("wfi");
+        }
+    }
 }
 
