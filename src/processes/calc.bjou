@@ -7,7 +7,7 @@ using import "syscall.bjou"
 
 type calc {
     const STACK_SIZE := 512
-    const QM         := 8
+    const QM         := 1
     const PROC_NAME  := "calc"
 
     proc routine(data : void*, data_len : u32) {

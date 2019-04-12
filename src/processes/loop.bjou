@@ -3,6 +3,7 @@
 module process_loop
 
 using import "asm.bjou"
+using import "console.bjou"
 
 type loop {
     const STACK_SIZE := 128
@@ -10,6 +11,6 @@ type loop {
     const PROC_NAME  := "loop"
 
     proc routine(data : void*, data_len : u32) {
-        while true asm$wfi()
+        while true    { asm$wfi() }
     }
 }

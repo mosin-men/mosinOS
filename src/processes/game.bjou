@@ -1,0 +1,120 @@
+# game.bjou
+
+module process_game
+
+using import "console.bjou"
+using import "syscall.bjou"
+using import "ansi_escapes.bjou"
+using import "cstr.bjou"
+
+const KEY_UNKNOWN := 0
+const KEY_UP      := 1
+const KEY_DOWN    := 2
+const KEY_RIGHT   := 3
+const KEY_LEFT    := 4
+
+const RESET         := "\e[0m"
+const BLUE          := "\e[34m"
+
+type game {
+    const STACK_SIZE := 512
+    const QM         := 1
+    const PROC_NAME  := "game"
+
+    proc routine(data : void*, data_len : u32) {
+        echo_off()
+
+        game_move_cursor(0, 0)
+        write(CLEAR_DISPLAY)
+
+        score   := 0
+        x       := 3
+        y       := 3
+        thing_x := 15
+        thing_y := 5
+
+        draw_level()
+        draw_thing('@', thing_x, thing_y, x, y)
+
+        while true {
+            draw_score(score)
+            game_move_cursor(x, y)
+
+            c := readchar()
+
+            if      c == 'q' { break }
+            else if c == 27  {
+                key := get_arrow()
+                if key == KEY_UP {
+                    if y > 3     y -= 1
+                } else if key == KEY_DOWN {
+                    if y < 13    y += 1
+                } else if key == KEY_RIGHT {
+                    if x < 34    x += 1
+                } else if key == KEY_LEFT {
+                    if x > 3     x -= 1
+                }
+
+                if x == thing_x and y == thing_y {
+                    draw_thing(' ', thing_x, thing_y, x, y)
+                    score += 1
+                }
+            }
+        }
+
+        game_move_cursor(0, 0)
+        write(CLEAR_DISPLAY)
+
+        echo_on()
+    }
+}
+
+proc game_move_cursor(x : i32, y : i32) {
+    write("\e[")
+    write(y)
+    write(';')
+    write(x)
+    write('H')
+}
+
+proc draw_score(score : i32) {
+    buff : char[32]
+    itoa(score, buff)
+    game_move_cursor(1, 1)
+    write(  " score: ")  writepad(buff, 26)  writeln()
+}
+
+proc draw_level() {
+    game_move_cursor(1, 2)
+    writeln(" ---------------game---------------")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" |                                |")
+    writeln(" ----------------------------------")
+}
+
+proc draw_thing(thing : char, x : i32, y : i32, cur_x : i32, cur_y : i32) {
+    game_move_cursor(x, y)
+    write(thing)
+    game_move_cursor(cur_x, cur_y)
+}
+
+proc get_arrow() : i32 {
+    c := readchar() as i32
+    if c == 91 {
+        c = readchar()
+        if      c == 65    return KEY_UP
+        else if c == 66    return KEY_DOWN
+        else if c == 67    return KEY_RIGHT
+        else if c == 68    return KEY_LEFT
+    }
+    return KEY_UNKNOWN
+}

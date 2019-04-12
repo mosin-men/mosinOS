@@ -7,6 +7,7 @@ module process_sh
 using import "console.bjou"
 using import "syscall.bjou"
 using import "cstr.bjou"
+using import "ansi_escapes.bjou"
 
 using import "processes/mkproc.bjou"
 using import "processes/echo.bjou"
@@ -15,6 +16,7 @@ using import "processes/sleep.bjou"
 using import "processes/kill.bjou"
 using import "processes/top.bjou"
 using import "processes/calc.bjou"
+using import "processes/game.bjou"
 
 type sh {
     const STACK_SIZE := 1024
@@ -45,8 +47,8 @@ type sh {
             else if cstrcmp(prg, "kill")  == 0 { exec $ kill(wait, arg_data)        }
             else if cstrcmp(prg, "top")   == 0 { exec $ top(wait, arg_data)         }
             else if cstrcmp(prg, "calc")  == 0 { exec $ calc(wait, arg_data)        }
-            else if cstrcmp(prg, "clear") == 0 { for i := 0; i < 100; i += 1
-                                                    writeln()                       }
+            else if cstrcmp(prg, "game")  == 0 { exec $ game(wait, arg_data)        }
+            else if cstrcmp(prg, "clear") == 0 { cls()                              }
             else if cstrcmp(prg, "help")  == 0 { print_help()                       }
             else if cstrcmp(prg, "exit")  == 0 { break                              }
             else                               { write("unknown process/command '")
@@ -84,6 +86,19 @@ proc get_input(prompt : char*, buff : char*) {
     buff[l] = 0
 }
 
+proc sh_move_cursor(x : u32, y : u32) {
+    write("\e[")
+    write(y as i32)
+    write(';')
+    write(x as i32)
+    write('H')
+}
+
+proc cls() {
+    sh_move_cursor(0, 0)
+    write(CLEAR_DISPLAY)
+}
+
 proc print_help() {
     writeln(
 "Available processes are:
@@ -95,6 +110,7 @@ proc print_help() {
     kill PID          kill a process
     top [PID]         view active processes
     calc              basic calculator
+    game              a fun game
    
 Available commands are:
     exit              leave the shell
