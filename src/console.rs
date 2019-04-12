@@ -23,3 +23,11 @@ impl core::fmt::Write for Console {
         Ok(())
     }
 }
+
+pub unsafe fn print_c_str(_ptr : *const char) {
+    let mut ptr = _ptr;
+    while *ptr != '\0' {
+        putc(*ptr);
+        ptr = ptr.offset(1);
+    }
+}

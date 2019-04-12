@@ -37,7 +37,6 @@ const  IPAGEFAULT : u32 = 12;
 const  LPAGEFAULT : u32 = 13;
 const  SPAGEFAULT : u32 = 15;
 
-
 struct trap_handler{}
 
 
@@ -48,6 +47,7 @@ fn handle_trap(cause: u32, mut mepc: u32, mtval: u32) -> u32{
     let mode = cause & ASYNC;
     mepc = trap_handler::handler(code, mepc, mode, mtval);
     mepc = trap_handler::update_mepc(mepc, mode);
+    println!("handle_trap(): new mepc = {:X}", mepc);
     return mepc;
 }
 
@@ -71,7 +71,7 @@ impl trap_handler{
             (ASYNC, _)         => println!("UKNOWN ASYNCRONOUS INTERRUPT CODE"),
             (SYNC, IADDMISS)   => println!("INSTRUCTION ADDRESS MISSALIGNED"),
             (SYNC, IACCFAULT)  => println!("INSTRUCTION ACCESS FAULT"),
-            (SYNC, ILLINS)     => println!("ILLEGAL INSTRUCTION"),
+            (SYNC, ILLINS)     => println!("ILLEGAL INSTRUCTION {:X}", mtval),
             (SYNC, BREAK)      => println!("BREAK"),
             (SYNC, LADDMISS)   => println!("LOAD ADDRESS MISSALIGNED"),
             (SYNC, LACCFAULT)  => println!("LOAD ACCESS FAULT: {:#010X}", mtval),

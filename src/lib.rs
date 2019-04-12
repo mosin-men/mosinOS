@@ -87,17 +87,20 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 }
 
 #[no_mangle]
-unsafe fn proc_a() -> ! {
+unsafe fn proc_a() {
     loop{
-        println!("IN A");
         asm!("wfi");
+        println!("IN A");
     }
 }
 
-unsafe fn init() -> ! {
-    let pid = spawn(512, proc_a as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "a");
+unsafe fn init() {
+    println!("init started");
+    let pid = spawn(2048, proc_a as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "a");
+    println!("pid of a: {}", pid);
     loop{
         asm!("wfi");
+        println!("IN INIT");
     }
 }
 
@@ -113,6 +116,13 @@ unsafe fn mecall(code:u32){
     asm!("ecall");
 }
 
+extern "C" {
+    pub static mut __mystack : u32;
+    pub static mut _sp: u32;
+    pub static mut __kstack : u32;
+    pub static mut _ksp: u32;
+}
+
 #[no_mangle]
 fn main() -> () {
 
@@ -124,22 +134,25 @@ fn main() -> () {
     }
     /* Turns on timer interrupts */
     unsafe{
+      let pid = scheduler::sched.new_process(2048, init as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "init".as_bytes().as_ptr() as *const char);
+      println!("pid of init: {}", pid);
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
+      mecall(0);
+      loop { asm!("wfi"); }
     }
+
 
     /* enter user mode */
-    unsafe{
-    mecall(0);
-    }
-    let pid = spawn(512, init   as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "init");
-    println!("pid of new process: {}", pid);
+    // unsafe{
+    // mecall(0);
+    // }
 
     /* Hold the OS here */
-    loop{
-        unsafe{
-            asm!("wfi");
-        }
-    }
+    // loop{
+    //     unsafe{
+    //         asm!("wfi");
+    //     }
+    // }
 }
 

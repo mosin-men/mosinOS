@@ -59,7 +59,7 @@ pub fn heap_init() -> () {
         let node: u32 = cur_size_mask & (((heap_size - 4) / 4) as u32);
         ptr.write(node);
 
-        // println!("Initializing heap at {:p}, size: {:p}", ptr, &__heap_size);
+        println!("Initializing heap at {:p}, size: {:p}, ends at {:p}", ptr, &__heap_size, &__heap_end);
     }
 }
 

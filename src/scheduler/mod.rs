@@ -4,6 +4,7 @@ use crate::utils::rbtree::{ rbtree, rbtree_node };
 use core::fmt::Write;
 use core::ptr::null;
 use crate::mem::heap::{*};
+use crate::console::{print_c_str};
 
 extern "C" {
     static mut GLOBAL_CTX: [u32; 32];
@@ -42,7 +43,7 @@ impl scheduler {
     }
 
     pub fn init(&mut self) {
-        scheduler::reset_timers();
+        reset_timers();
         self.schedule = kmalloc(core::mem::size_of::<rbtree<u32, *mut PCB>>() as u32)
                    as *mut rbtree<u32, *mut PCB>;
         unsafe{
@@ -51,6 +52,7 @@ impl scheduler {
     }
 
     pub unsafe fn update_schedule(&mut self, mut mepc: u32)-> u32 {
+        println!("update_schedule()");
         // (*self.schedule).print();
         if self.current.is_null() { 
             // println!("CURRENT WAS NULL -- looking for process");
@@ -59,21 +61,25 @@ impl scheduler {
             if old_mepc != mepc {
                 println!("found a process to run: {:X}", mepc);
             }
-            scheduler::reset_timers();
+            reset_timers();
             return mepc; 
         }
         (*self.current).context   = GLOBAL_CTX;
         (*self.current).vruntime += (*self.current).QM;
-        (*self.current).pc       = mepc;
+        (*self.current).pc        = mepc;
 
-        (*self.schedule).insert((*self.current).vruntime, self.current);
+        self.add_to_tree((*self.current).vruntime, self.current);
 
-        return self.schedule_next(mepc);
+        mepc = self.schedule_next(mepc);
+        reset_timers();
+
+        return mepc;
     }
 
     pub unsafe fn schedule_next(&mut self, mut mepc: u32) -> u32 {
         let waiting = kmalloc(((*self.schedule).len as u32) * core::mem::size_of::<*mut PCB>() as u32)
                         as *mut *mut PCB;
+
         let mut n_waiting = 0;
 
         let all_pcbs = self.collect_all_procs();
@@ -93,12 +99,22 @@ impl scheduler {
                         }
                     } else if (*(*pcb)).sleep <= 0 {
                         self.current = *pcb;
+                        print!("scheduled process '");
+                        console::print_c_str((*(*pcb)).name);
+                        println!("'");
                         break;
                     } else {
                         *waiting.offset(n_waiting) = *pcb;
                         n_waiting += 1;
                     }
                 }
+              
+                let sp = (*(*pcb)).stack_pointer as *mut u32;
+                if sp.is_null() {
+                    println!("sp is NULL????");
+                }
+                kfree(sp);
+
             } else {
                 if !all_pcbs.is_null() {
                     kfree(all_pcbs as *mut u32);
@@ -134,6 +150,11 @@ impl scheduler {
     pub unsafe fn new_process(&mut self, stack_size: u32, ip: u32, QM: u32, data : *mut u32, mut data_len : u32, name : *const char) -> i32 {
         let pcb: *mut PCB = kmalloc(core::mem::size_of::<PCB>() as u32) as *mut PCB;
         let stack: *mut u32 = kmalloc(stack_size);
+        
+        if stack.is_null() {
+            println!("could not allocate process stack!");
+        }
+
         let mut data_dst = core::ptr::null::<u32>() as *mut u32;
 
         if data.is_null() {
@@ -154,11 +175,15 @@ impl scheduler {
         (*pcb).pc            = ip;
         (*pcb).kill          = false;
         (*pcb).QM            = QM;
+        println!("new process QM = {}", QM);
         (*pcb).waitpid       = -1;
         (*pcb).sleep         = 0;
 
-        (*self.schedule).insert((*pcb).vruntime, pcb);
+        self.add_to_tree((*pcb).vruntime, pcb);
         self.next_pid += 1;
+        
+        println!("new_process(): new pid = {}", (*pcb).pid);
+
         return (*pcb).pid;
     }
 
@@ -253,25 +278,25 @@ impl scheduler {
 
         return false;
     }
+}
 
-    fn reset_timers() {
+pub fn reset_timers() {
 
-        let mtimelo        : &mut u32 = get_clint_register(ClintRegister :: MTIMELO);
-        let mtimehi        : &mut u32 = get_clint_register(ClintRegister :: MTIMEHI);
-        let mtimecmplo     : &mut u32 = get_clint_register(ClintRegister :: MTIMECMPLO);
-        let mtimecmphi     : &mut u32 = get_clint_register(ClintRegister :: MTIMECMPHI);
+    let mtimelo        : &mut u32 = get_clint_register(ClintRegister :: MTIMELO);
+    let mtimehi        : &mut u32 = get_clint_register(ClintRegister :: MTIMEHI);
+    let mtimecmplo     : &mut u32 = get_clint_register(ClintRegister :: MTIMECMPLO);
+    let mtimecmphi     : &mut u32 = get_clint_register(ClintRegister :: MTIMECMPHI);
 
-        let cur_mtimelo    : u32      = *mtimelo;
-        let cur_mtimehi    : u32      = *mtimehi;
+    let cur_mtimelo    : u32      = *mtimelo;
+    let cur_mtimehi    : u32      = *mtimehi;
 
-        let interval = (FREQ as u64) / 1;
+    let interval = (FREQ as u64) / 1;
 
-        let mtime64        : u64 = ((cur_mtimehi as u64) << 32) + (cur_mtimelo as u64);
-        let mtimecmp64     : u64 = mtime64 + interval;
-        let new_mtimecmphi : u32 = (mtimecmp64 >> 32) as u32;
-        let new_mtimecmplo : u32 = (mtimecmp64 & 0x00000000FFFFFFFF) as u32;
+    let mtime64        : u64 = ((cur_mtimehi as u64) << 32) + (cur_mtimelo as u64);
+    let mtimecmp64     : u64 = mtime64 + interval;
+    let new_mtimecmphi : u32 = (mtimecmp64 >> 32) as u32;
+    let new_mtimecmplo : u32 = (mtimecmp64 & 0x00000000FFFFFFFF) as u32;
 
-        *mtimecmplo = new_mtimecmplo;
-        *mtimecmphi = new_mtimecmphi;
-    }
+    *mtimecmplo = new_mtimecmplo;
+    *mtimecmphi = new_mtimecmphi;
 }
