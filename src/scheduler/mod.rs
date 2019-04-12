@@ -70,6 +70,8 @@ impl scheduler {
 
         self.add_to_tree((*self.current).vruntime, self.current);
 
+        (self.current) = core::ptr::null::<PCB>() as *mut PCB;
+
         mepc = self.schedule_next(mepc);
         reset_timers();
 
@@ -78,12 +80,11 @@ impl scheduler {
 
     pub unsafe fn schedule_next(&mut self, mut mepc: u32) -> u32 {
         let waiting = kmalloc(((*self.schedule).len as u32) * core::mem::size_of::<*mut PCB>() as u32)
-                        as *mut *mut PCB;
+            as *mut *mut PCB;
 
         let mut n_waiting = 0;
 
         let all_pcbs = self.collect_all_procs();
-
         loop {
             if let Some((time, pcb)) = (*self.schedule).first() {
                 (*self.schedule).delete(*time);
@@ -108,7 +109,7 @@ impl scheduler {
                         n_waiting += 1;
                     }
                 }
-              
+
                 let sp = (*(*pcb)).stack_pointer as *mut u32;
                 if sp.is_null() {
                     println!("sp is NULL????");
@@ -122,8 +123,8 @@ impl scheduler {
                 if !waiting.is_null() {
                     kfree(waiting as *mut u32);
                 }
-                return mepc;
             }
+            return mepc;
         }
 
         for i in 0..n_waiting {
@@ -136,7 +137,7 @@ impl scheduler {
         }
 
         GLOBAL_CTX = (*self.current).context;
-        
+
         if !all_pcbs.is_null() {
             kfree(all_pcbs as *mut u32);
         }
@@ -246,7 +247,7 @@ impl scheduler {
     }
 
     pub unsafe fn collect_all_procs(&mut self) -> *mut *mut PCB {
-        let mut n = (*self.schedule).len;
+        let mut n = (*self.schedule).len + 1;
         if !self.current.is_null() {
             n += 1;
         }
@@ -256,7 +257,7 @@ impl scheduler {
         let mut idx = 0;
         if !self.current.is_null() {
             *array.offset(0) = self.current;
-            n += 1;
+            idx += 1;
         }
 
         scheduler::_collect_all_procs((*self.schedule).root, array, &mut idx);
