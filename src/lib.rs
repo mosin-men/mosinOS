@@ -90,7 +90,14 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 unsafe fn proc_a() -> ! {
     loop{
         println!("IN A");
-        exit();
+        asm!("wfi");
+    }
+}
+
+unsafe fn init() -> ! {
+    let pid = spawn(512, proc_a as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "a");
+    loop{
+        asm!("wfi");
     }
 }
 
@@ -100,6 +107,10 @@ unsafe fn proc_b() -> ! {
         println!("IN B");
         exit();
     }
+}
+
+unsafe fn mecall(code:u32){
+    asm!("ecall");
 }
 
 #[no_mangle]
@@ -118,9 +129,10 @@ fn main() -> () {
     }
 
     /* enter user mode */
-    unsafe{ _UMODE_SWITCH(); }
- 
-    let pid = spawn(512, proc_a as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "a");
+    unsafe{
+    mecall(0);
+    }
+    let pid = spawn(512, init   as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "init");
     println!("pid of new process: {}", pid);
 
     /* Hold the OS here */

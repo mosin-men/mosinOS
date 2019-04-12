@@ -68,9 +68,15 @@ pub unsafe fn do_syscall (code: u32, arg0 : u32, arg1 : u32, arg2 : u32, arg3 : 
         EXIT    => result = handle_exit(),
         WRITE   => println!("SYSCALL WRITE"),
         READ    => println!("SYSCALL READ"),
-        ALLOC   => println!("SYSCALL ALLOC"),
-        FREE    => println!("SYSCALL FREE"),
+        ALLOC   => result = handle_alloc(arg0),
+        FREE    => result = handle_free(arg0),
         BARRIER => println!("SYSCALL BARRIER"),
+        SPAWN   => result = handle_spawn(arg0, arg1, arg2, arg3, arg4, arg5),
+        WAITPID => result = handle_waitpid(arg0),
+        KILL    => result = handle_kill(arg0),
+        NPROC   => result = handle_nproc(),
+        PROCS   => result = handle_procs(arg0),
+        SLEEP   => result = handle_sleep(arg0),
         _       => println!("Unknown User Mode ECALL CODE"),
     };
     return result;
