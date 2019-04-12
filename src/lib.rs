@@ -51,12 +51,14 @@ mod trap;
 mod syscalls;
 mod mem;
 mod scheduler;
+mod fs;
 use crate::mem::heap::{*};
 use core::fmt::Write;
 use crate::atomics::barrier as barrier;
 use crate::atomics::locks as locks;
 use crate::mem::pmp::PMP_MODES as pmp_modes;
 use crate::utils::rbtree::rbtree;
+use crate::fs::ext2 as ext2;
 
 //The eh_personality tells our program how to unwind. We aren't going to write that, so tell
 //it to do nothing.
@@ -112,24 +114,30 @@ unsafe fn proc_b() -> ! {
 
 #[no_mangle]
 fn main() -> () {
-
     /* Initialize */
+    let fs = ext2::Ext2FS::init();
+    fs.get_fs_info();
+    fs.read_block_descriptor();
+    /*unsafe {
+        let ptr: *const u32 = &mut __fs_start as *const u32;
+        println!("{:p}", ptr);
+    }*/
     heap_init();
     console::init();
     unsafe{
     scheduler::sched.init();
     }
     /* Turns on timer interrupts */
-    unsafe{
+    /*unsafe{
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
       scheduler::sched.new_process(1000, proc_a as u32, 1);
       scheduler::sched.new_process(1000, proc_b as u32, 1);
       asm!("wfi");
-    }
+    }*/
 
 
-    heap_print(16);
+    /*heap_print(16);
     let ptr: *mut u32 = kmalloc(2);
     let ptr2: *mut u32 = kmalloc(2);
     let ptr3: *mut u32 = kmalloc(2);
@@ -174,7 +182,7 @@ fn main() -> () {
     unsafe{
         ptr.write_volatile(8);
         println!("ptr: {:p} value @ ptr: {}", ptr, ptr.read_volatile());
-    }
+    }*/
     
     /* Hold the OS here */
     loop{
