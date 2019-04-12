@@ -4,7 +4,7 @@ use crate::syscalls as syscalls;
 use crate::scheduler;
 
 extern "C" {
-  static GLOBAL_CTX: [u32; 32];
+  static mut GLOBAL_CTX: [u32; 32];
 }
 
 const  ASYNC      : u32 = 0x80000000;
@@ -81,7 +81,15 @@ impl trap_handler{
             {
                 println!("USER MODE ECALL");
                 unsafe{
-                    syscalls::do_syscall(GLOBAL_CTX[10]);
+                    let result = syscalls::do_syscall(
+                        GLOBAL_CTX[10],
+                        GLOBAL_CTX[11],
+                        GLOBAL_CTX[12],
+                        GLOBAL_CTX[13],
+                        GLOBAL_CTX[14],
+                        GLOBAL_CTX[15],
+                        GLOBAL_CTX[16]);
+                    GLOBAL_CTX[10] = result;
                 }
             }
             (SYNC, SECALL)     => println!("SUPERVISOR MODE ECALL"),

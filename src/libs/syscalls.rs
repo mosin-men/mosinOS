@@ -1,35 +1,44 @@
 
-pub fn exit(code: u32) {
-    _exit(1, code);
+use crate::syscalls::{*};
+
+pub fn exit() { unsafe { syscall(EXIT, 0, 0, 0, 0, 0, 0); } }
+
+pub fn alloc(size: u32) -> *mut u32 { unsafe {
+    return syscall(ALLOC, size, 0, 0, 0, 0, 0) as *mut u32;
+}
 }
 
-pub fn alloc(size: u32) {
-    let rv = _alloc(4, size);
-     
-
+pub fn free<T>(addr: *mut T) { unsafe {
+    syscall(FREE, addr as u32, 0, 0, 0, 0, 0);
+}
 }
 
-pub fn free(addr: u32) {
-    _free(5, addr);
+pub fn spawn(stack_size : u32, ip : u32, QM : u32, data : *mut u32, data_len : u32, name : &'static str) -> i32 { unsafe {
+    return syscall(SPAWN, stack_size, ip, QM, data as u32, data_len, name.as_bytes().as_ptr() as u32) as i32;
+}
 }
 
-
-fn _exit(syscode: u32, code: u32){
-    unsafe{
-        asm!("ecall");
-    }
+pub fn waitpid(pid : i32) -> i32 { unsafe {
+    return syscall(WAITPID, pid as u32, 0, 0, 0, 0, 0) as i32;
+}
 }
 
-fn _alloc(syscode: u32, size: u32) -> u32{
-    unsafe{
-        asm!("ecall");
-    }
+pub fn kill(pid : i32) -> i32 { unsafe {
+    return syscall(KILL, pid as u32, 0, 0, 0, 0, 0) as i32;
+}
 }
 
-fn _free(syscode: u32, addr: u32){
-    unsafe {
-        asm!("ecall");
-    }
+pub fn nproc() -> u32 { unsafe {
+    return syscall(NPROC, 0, 0, 0, 0, 0, 0);
+}
 }
 
+pub fn procs() -> *const process_info { unsafe {
+    return syscall(PROCS, 0, 0, 0, 0, 0, 0) as *const process_info;
+}
+}
 
+pub fn sleep(secs : u32) { unsafe {
+    syscall(SLEEP, secs, 0, 0, 0, 0, 0);
+}
+}

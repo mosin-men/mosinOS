@@ -13,23 +13,23 @@ pub static mut sched:scheduler = scheduler::new();
 
 #[derive(Clone, Debug)]
 pub struct PCB {
-    context            : [u32; 32],
-    pc                 :  u32,
-    vruntime           :  u32,
-    QM                 :  u32,
-    pid                :  i32,
-    stack_size         :  u32,
-    stack_pointer      :  u32,
-    name               :  &'static str,
-    kill               :  bool,
-    waitpid            :  i32,
-    sleep              :  i16,
+    pub context            : [u32; 32],
+    pub pc                 :  u32,
+    pub vruntime           :  u32,
+    pub QM                 :  u32,
+    pub pid                :  i32,
+    pub stack_size         :  u32,
+    pub stack_pointer      :  u32,
+    pub name               :  *const char,
+    pub kill               :  bool,
+    pub waitpid            :  i32,
+    pub sleep              :  i16,
 }
 
 pub struct scheduler {
-    current: *mut PCB,
-    schedule: *mut rbtree<u32, *mut PCB>,
-    next_pid: i32,
+    pub current: *mut PCB,
+    pub schedule: *mut rbtree<u32, *mut PCB>,
+    pub next_pid: i32,
 }
 
 impl scheduler {
@@ -51,9 +51,9 @@ impl scheduler {
     }
 
     pub unsafe fn update_schedule(&mut self, mut mepc: u32)-> u32 {
-        (*self.schedule).print();
+        // (*self.schedule).print();
         if self.current.is_null() { 
-            println!("CURRENT WAS NULL -- looking for process");
+            // println!("CURRENT WAS NULL -- looking for process");
             let old_mepc = mepc;
             mepc = self.schedule_next(mepc);
             if old_mepc != mepc {
@@ -103,7 +103,9 @@ impl scheduler {
                 if !all_pcbs.is_null() {
                     kfree(all_pcbs as *mut u32);
                 }
-                kfree(waiting as *mut u32);
+                if !waiting.is_null() {
+                    kfree(waiting as *mut u32);
+                }
                 return mepc;
             }
         }
@@ -122,13 +124,14 @@ impl scheduler {
         if !all_pcbs.is_null() {
             kfree(all_pcbs as *mut u32);
         }
-
-        kfree(waiting as *mut u32);
+        if !waiting.is_null() {
+            kfree(waiting as *mut u32);
+        }
 
         return (*self.current).pc;
     }
 
-    pub unsafe fn new_process(&mut self, stack_size: u32, ip: u32, QM: u32, data : *mut u32, mut data_len : u32) -> i32 {
+    pub unsafe fn new_process(&mut self, stack_size: u32, ip: u32, QM: u32, data : *mut u32, mut data_len : u32, name : *const char) -> i32 {
         let pcb: *mut PCB = kmalloc(core::mem::size_of::<PCB>() as u32) as *mut PCB;
         let stack: *mut u32 = kmalloc(stack_size);
         let mut data_dst = core::ptr::null::<u32>() as *mut u32;
@@ -186,11 +189,11 @@ impl scheduler {
         return core::ptr::null::<rbtree_node<u32, *mut PCB>>() as *mut rbtree_node<u32, *mut PCB>;
     }
 
-    unsafe fn tree_has_pid(&mut self, pid : i32) -> bool {
+    pub unsafe fn tree_has_pid(&mut self, pid : i32) -> bool {
         return scheduler::_tree_get_node_with_pid((*self.schedule).root, pid).is_null();
     }
 
-    unsafe fn get_pcb(&mut self, pid : i32) -> *mut PCB {
+    pub unsafe fn get_pcb(&mut self, pid : i32) -> *mut PCB {
         if (*self.current).pid == pid {
             return self.current;
         }
@@ -217,7 +220,7 @@ impl scheduler {
         }
     }
 
-    unsafe fn collect_all_procs(&mut self) -> *mut *mut PCB {
+    pub unsafe fn collect_all_procs(&mut self) -> *mut *mut PCB {
         let mut n = (*self.schedule).len;
         if !self.current.is_null() {
             n += 1;
