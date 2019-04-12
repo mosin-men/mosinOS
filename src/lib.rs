@@ -89,14 +89,15 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 }
 
 #[no_mangle]
-unsafe fn proc_a() {
+unsafe fn proc_a() -> !{
     loop{
         asm!("wfi");
         println!("IN A");
     }
 }
 
-unsafe fn init() {
+#[no_mangle]
+unsafe fn init() -> !{
     println!("init started");
     let pid = spawn(2048, proc_a as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "a");
     println!("pid of a: {}", pid);
@@ -118,12 +119,6 @@ unsafe fn mecall(code:u32){
     asm!("ecall");
 }
 
-extern "C" {
-    pub static mut __mystack : u32;
-    pub static mut _sp: u32;
-    pub static mut __kstack : u32;
-    pub static mut _ksp: u32;
-}
 
 #[no_mangle]
 fn main() -> () {
