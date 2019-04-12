@@ -90,11 +90,11 @@ proc write(out : char) {
     mem := ADDR as u32*
     
     # Check to ensure the FIFO isn't full and spin if it is.
-    while true {
-        fifo_full := \volatile_r{ @(mem + (UartRegisters.TXDATA as u32)) }
-        if (fifo_full band (1u32 bshl 31u32)) == 0
-            break
-    }
+    # while true {
+    #     fifo_full := \volatile_r{ @(mem + (UartRegisters.TXDATA as u32)) }
+    #     if (fifo_full band (1u32 bshl 31u32)) == 0
+    #         break
+    # }
     
     #    Since we're out of the above loop, we can write the char to data
     \volatile_w{ @(mem + (UartRegisters.TXDATA as u32)) = out as u32 }

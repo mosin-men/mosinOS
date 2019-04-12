@@ -5,5 +5,5 @@ module defs
 const QEMU := 0
 const E31 := 1
 const HIFIVE := 2
-const TARGET := QEMU
+const TARGET := E31
 const CONSOLE_BUFF_SZ := 256

@@ -26,6 +26,8 @@ type sh {
     proc routine(data : void*, data_len : u32) {
         buff := syscall::alloc(128) as char*
 
+        cls()
+
         while true {
             get_input(data as char*, buff)
             line         := trim_spc(buff)

@@ -25,23 +25,27 @@ using import "processes/init.bjou"
 using import "processes/mkproc.bjou"
 
 proc __no_mangle__ main() {
+    uart::init()
+    console::init()
+    writeln("hello, world")
+    while true asm$wfi()
     # Initialize core components.
-    if  start_component("uart",    uart   ::init)
-    and start_component("console", console::init)
-    and start_component("heap",    heap   ::init)
-    and start_component("sched",   sched  ::init) {
-        # Turn on timer interrupts.
-        asm$enable_interrupts()
-        # Enter user mode
-        asm$umode_switch() 
+    # if  start_component("uart",    uart   ::init)
+    # and start_component("console", console::init)
+    # and start_component("heap",    heap   ::init)
+    # and start_component("sched",   sched  ::init) {
+    #     # Turn on timer interrupts.
+    #     asm$enable_interrupts()
+    #     # Enter user mode
+    #     asm$umode_switch() 
 
-        if start_component("init", init_init) {
-            # spin and let processes take over
-            while true    { asm$wfi() }
-        }
-    }
+    #     if start_component("init", init_init) {
+    #         # spin and let processes take over
+    #         while true    { asm$wfi() }
+    #     }
+    # }
     
-    abort("Boot failure.")
+    # abort("Boot failure.")
 }
 
 proc init_init() : (error | none) {
