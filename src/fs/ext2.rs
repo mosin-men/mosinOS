@@ -286,7 +286,7 @@ impl Ext2FS {
                     _   => "NOPE",
                 });
                 print!("     {:0>5}     ", (*dir).inode);
-                let mut sz = (*tgt_inode).size;
+                let sz = (*tgt_inode).size;
                 print!("{:0>12}     ", sz);
                 for k in 0..(*dir).name_len {
                     print!("{}", (*dir).name[k as usize] as char);
