@@ -115,9 +115,40 @@ unsafe fn proc_b() -> ! {
 #[no_mangle]
 fn main() -> () {
     /* Initialize */
-    let fs = ext2::Ext2FS::init();
+    let mut fs = ext2::Ext2FS::init();
     fs.get_fs_info();
-    fs.read_block_descriptor();
+    fs.read_block_descriptors();
+    fs.read_directory_inode();
+    let mut t = fs.fs_cd("Blurrrrrrrrr");
+    println!("{}.", match t {
+        0   => "Directory change succeeded",
+        1   => "Target not a directory",
+        2   => "Target not present",
+        _   => "Undefined error",
+    });
+    t = fs.fs_cd("test.txt");
+    println!("{}.", match t {
+        0   => "Directory change succeeded",
+        1   => "Target not a directory",
+        2   => "Target not present",
+        _   => "Undefined error",
+    });
+    t = fs.fs_cd("test");
+    println!("{}.", match t {
+        0   => "Directory change succeeded",
+        1   => "Target not a directory",
+        2   => "Target not present",
+        _   => "Undefined error",
+    });
+    fs.read_directory_inode();
+    t = fs.fs_cd("..");
+    println!("{}.", match t {
+        0   => "Directory change succeeded",
+        1   => "Target not a directory",
+        2   => "Target not present",
+        _   => "Undefined error",
+    });
+    fs.read_directory_inode();
     /*unsafe {
         let ptr: *const u32 = &mut __fs_start as *const u32;
         println!("{:p}", ptr);
