@@ -231,6 +231,7 @@ impl Ext2FS {
     unsafe fn _get_inode(&self, id: u32) -> *const Inode {
         /* Get inode and block index information based off fs structure
            from superblock */
+        let inodes_per_block = self.block_size / self.inode_size;
         let bg = (id - 1) / self.inodes_per_group;
         let idx = (id - 1) % self.inodes_per_group;
         let blk_idx = idx * self.inode_size / self.block_size;
@@ -243,7 +244,7 @@ impl Ext2FS {
         let bgd = bgds.offset(bg as isize);
         let inode_block = (*bgd).inode_table + blk_idx;
         let block_as_inodes = self._get_block(inode_block) as *const Inode;
-        let inode_final = block_as_inodes.offset(idx as isize);
+        let inode_final = block_as_inodes.offset((idx % inodes_per_block) as isize);
         return inode_final;
     }
 
@@ -260,12 +261,12 @@ impl Ext2FS {
             0x4000  => "DIR",
             _       => "UNSUPPORTED",
         });
-        print!("data blocks: ");
+        /*print!("data blocks: ");
         for j in 0..15 {
             if (*inode_final).block[j] != 0 {
                 print!("{}", (*inode_final).block[j]);
             }
-        }
+        }*/
         println!("");
 
         /* The great thing about a directory entry is that it's a linked list with
@@ -286,8 +287,7 @@ impl Ext2FS {
                     _   => "NOPE",
                 });
                 print!("     {:0>5}     ", (*dir).inode);
-                let sz = (*tgt_inode).size;
-                print!("{:0>12}     ", sz);
+                print!("{:0>12}     ", (*tgt_inode).size);
                 for k in 0..(*dir).name_len {
                     print!("{}", (*dir).name[k as usize] as char);
                 }
