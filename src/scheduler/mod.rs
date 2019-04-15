@@ -52,8 +52,6 @@ impl scheduler {
     }
 
     pub unsafe fn update_schedule(&mut self, mut mepc: u32)-> u32 {
-        println!("update_schedule()");
-        // (*self.schedule).print();
         if self.current.is_null() { 
             // println!("CURRENT WAS NULL -- looking for process");
             let old_mepc = mepc;
@@ -100,9 +98,6 @@ impl scheduler {
                         }
                     } else if (*(*pcb)).sleep <= 0 {
                         self.current = *pcb;
-                        print!("scheduled process '");
-                        console::print_c_str((*(*pcb)).name);
-                        println!("'");
                         break;
                     } else {
                         *waiting.offset(n_waiting) = *pcb;
@@ -176,7 +171,6 @@ impl scheduler {
         (*pcb).pc            = ip;
         (*pcb).kill          = false;
         (*pcb).QM            = QM;
-        println!("new process QM = {}", QM);
         (*pcb).waitpid       = -1;
         (*pcb).sleep         = 0;
 

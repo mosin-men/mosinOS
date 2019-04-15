@@ -47,7 +47,6 @@ fn handle_trap(cause: u32, mut mepc: u32, mtval: u32) -> u32{
     let mode = cause & ASYNC;
     mepc = trap_handler::handler(code, mepc, mode, mtval);
     mepc = trap_handler::update_mepc(mepc, mode);
-    println!("handle_trap(): new mepc = {:X}", mepc);
     return mepc;
 }
 
@@ -60,7 +59,7 @@ impl trap_handler{
             (ASYNC, UTIMER)    => println!("USER MODE TIMER INTERRUPT"),
             (ASYNC, STIMER)    => println!("SUPERVISOR MODE TIMER INTERRUPT"),
             (ASYNC, MTIMER)    => {
-                println!("MACHINE MODE TIMER INTERRUPT");
+           //     println!("MACHINE MODE TIMER INTERRUPT");
                 unsafe{
                 mepc = scheduler::sched.update_schedule(mepc);
                 }

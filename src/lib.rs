@@ -98,20 +98,18 @@ unsafe fn proc_a() -> !{
 
 #[no_mangle]
 unsafe fn init() -> !{
-    println!("init started");
     let pid = spawn(2048, proc_a as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "a");
-    println!("pid of a: {}", pid);
+    let pid = spawn(2048, proc_b as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "b");
     loop{
         asm!("wfi");
-        println!("IN INIT");
     }
 }
 
 #[no_mangle]
 unsafe fn proc_b() -> ! {
     loop{
+        asm!("wfi");
         println!("IN B");
-        exit();
     }
 }
 
@@ -172,7 +170,6 @@ fn main() -> () {
       println!("pid of init: {}", pid);
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
-      mecall(0);
       loop { asm!("wfi"); }
     }*/
 
@@ -182,62 +179,15 @@ fn main() -> () {
     // mecall(0);
     // }
 
-    /*unsafe{
+    unsafe{
+      scheduler::sched.new_process(2048, init as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "init".as_bytes().as_ptr() as *mut char);
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
-      scheduler::sched.new_process(1000, proc_a as u32, 1);
-      scheduler::sched.new_process(1000, proc_b as u32, 1);
+      mecall(0);
       asm!("wfi");
-    }*/
-
-
-    /*heap_print(16);
-    let ptr: *mut u32 = kmalloc(2);
-    let ptr2: *mut u32 = kmalloc(2);
-    let ptr3: *mut u32 = kmalloc(2);
-    heap_print(16);
-    kfree(ptr);
-    heap_print(16);
-    kfree(ptr3);
-    heap_print(16);
-    kfree(ptr2);
-    heap_print(16);
-    
-    mem::pmp::pmp_set(0, true, true, true, pmp_modes::TOR, 0x80000080);
-    mem::pmp::pmp_set(1, false, false, false, pmp_modes::TOR, 0x80000090);
-    mem::pmp::pmp_set(2, false, false, false, pmp_modes::OFF, 0x0);
-    mem::pmp::pmp_set(3, false, false, false, pmp_modes::OFF, 0x0);
-    mem::pmp::pmp_set(4, false, false, false, pmp_modes::OFF, 0x0);
-    mem::pmp::pmp_set(5, false, false, false, pmp_modes::OFF, 0x0);
-    mem::pmp::pmp_set(6, false, false, false, pmp_modes::OFF, 0x0);
-    mem::pmp::pmp_set(7, false, false, false, pmp_modes::OFF, 0x0);
-
-    let ptr: *mut u32 = kmalloc(16);
-    println!("ptr = {:#010X}", ptr as u32);
-    let ptr2: *mut u32 = 0 as *mut u32;
-    let pmpcfg0: u32;
-    let pmpcfg1: u32;
-    let pmpaddr0: u32;
-    let pmpaddr1: u32;
-    let mut mstatus : u32;
-    unsafe{
-        // asm!("li t1, 0x20000\ncsrs mstatus, t1":::"t1":"volatile");
-
-        asm!("csrr $0, pmpcfg0": "=r"(pmpcfg0));
-        asm!("csrr $0, pmpcfg1": "=r"(pmpcfg1));
-        asm!("csrr $0, pmpaddr0": "=r"(pmpaddr0));
-        asm!("csrr $0, pmpaddr1": "=r"(pmpaddr1));
     }
 
-    println!("pmpcfg0: {:#010X}, pmpcfg1: {:#010X}, pmpaddr0: {:#010X}, pmpaddr1: {:#010X}", pmpcfg0, pmpcfg1, pmpaddr0, pmpaddr1);
-    msyscall(0);
-    syscall(0);
-    
-    unsafe{
-        ptr.write_volatile(8);
-        println!("ptr: {:p} value @ ptr: {}", ptr, ptr.read_volatile());
-    }*/
-    
+
     /* Hold the OS here */
     loop{
         unsafe{
