@@ -123,11 +123,11 @@ unsafe fn mecall(code:u32){
 #[no_mangle]
 fn main() -> () {
     /* Initialize */
-    let mut fs = ext2::Ext2FS::init();
-    fs.get_fs_info();
-    fs.read_block_descriptors();
-    fs.read_directory_inode();
-    let mut t = fs.fs_cd("Blurrrrrrrrr");
+    //let mut fs = ext2::Ext2FS::init();
+    //fs.get_fs_info();
+    //fs.read_block_descriptors();
+    //fs.read_directory_inode();
+    /*let mut t = fs.fs_cd("Blurrrrrrrrr");
     println!("{}.", match t {
         0   => "Directory change succeeded",
         1   => "Target not a directory",
@@ -156,7 +156,7 @@ fn main() -> () {
         2   => "Target not present",
         _   => "Undefined error",
     });
-    fs.read_directory_inode();
+    fs.read_directory_inode();*/
     /*unsafe {
         let ptr: *const u32 = &mut __fs_start as *const u32;
         println!("{:p}", ptr);
@@ -167,14 +167,14 @@ fn main() -> () {
     scheduler::sched.init();
     }
     /* Turns on timer interrupts */
-    /*unsafe{
+    unsafe{
       let pid = scheduler::sched.new_process(2048, init as u32, 1, core::ptr::null::<u32>() as *mut u32, 0, "init".as_bytes().as_ptr() as *const char);
       println!("pid of init: {}", pid);
       asm!("li t1, 0x80\ncsrs mie, t1":::"t1":"volatile");
       asm!("li t1, 0x8\ncsrs mstatus, t1":::"t1":"volatile");
       mecall(0);
       loop { asm!("wfi"); }
-    }*/
+    }
 
 
     /* enter user mode */
@@ -191,7 +191,7 @@ fn main() -> () {
     }*/
 
 
-    /*heap_print(16);
+    heap_print(16);
     let ptr: *mut u32 = kmalloc(2);
     let ptr2: *mut u32 = kmalloc(2);
     let ptr3: *mut u32 = kmalloc(2);
@@ -230,13 +230,13 @@ fn main() -> () {
     }
 
     println!("pmpcfg0: {:#010X}, pmpcfg1: {:#010X}, pmpaddr0: {:#010X}, pmpaddr1: {:#010X}", pmpcfg0, pmpcfg1, pmpaddr0, pmpaddr1);
-    msyscall(0);
-    syscall(0);
+    //msyscall(0);
+    //syscall(0);
     
     unsafe{
         ptr.write_volatile(8);
         println!("ptr: {:p} value @ ptr: {}", ptr, ptr.read_volatile());
-    }*/
+    }
     
     /* Hold the OS here */
     loop{

@@ -61,6 +61,10 @@ impl UartDevice {
         /* Populate the memory for the divisor, the transmit control register,
            and the receive control register */
         unsafe {
+            #[cfg(target="e31")]
+            ((uart_config::ADDR + 0x03C) as *mut usize).write_volatile(((uart_config::ADDR + 0x03C) as *mut usize).read_volatile() & !(0x0003_0000 as usize));
+            #[cfg(target="e31")]
+            ((uart_config::ADDR + 0x038) as *mut usize).write_volatile(((uart_config::ADDR + 0x038) as *mut usize).read_volatile() | (0x0003_0000 as usize));
             mem.offset(UartRegisters::DIV as isize).write_volatile(UART_DIVISOR);
             mem.offset(UartRegisters::TXCTRL as isize).write_volatile(txreg);
             mem.offset(UartRegisters::RXCTRL as isize).write_volatile(rxreg);

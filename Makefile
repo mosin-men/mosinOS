@@ -8,7 +8,7 @@ CXX=$(CROSS)-g++
 AS=$(CROSS)-as
 GDB=$(CROSS)-gdb
 
-LDSFILE=lds/qemu.lds
+LDSFILE=lds/e31.lds
 ASFLAGS=-march=rv32ima -mabi=ilp32 -O0 -g
 LDFLAGS=-T$(LDSFILE) -march=rv32ima -mabi=ilp32 -O0 -g -nostartfiles -nostdinc -ffreestanding -nostdlib -Ltarget/$(TARGET)/debug -L.
 OUT=$(NAME).elf
@@ -36,6 +36,9 @@ $(RUST_OBJECT): Makefile $(RUST_SOURCES)
 
 qemu: $(OUT)
 	$(QEMU) $(QEMUARGS)
+
+e31: $(OUT)
+    $(QEMU) $(QEMUARGS)
 
 gdb: $(OUT)
 	#$(QEMU) $(QEMUARGS) -S -s &

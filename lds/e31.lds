@@ -46,6 +46,7 @@ SECTIONS
     *(.rdata)
     *(.rodata .rodata.*)
     *(.gnu.linkonce.r.*)
+    PROVIDE(__fs_start = _ext2fs);
   } >flash AT>flash :flash
 
   . = ALIGN(4);
@@ -121,7 +122,7 @@ SECTIONS
     *(.data .data.*)
     *(.gnu.linkonce.d.*)
     . = ALIGN(8);
-    PROVIDE( __global_pointer$ = . + 0x800 );
+    PROVIDE( __global_pointer_mine$ = . + 0x800 );
     *(.sdata .sdata.*)
     *(.gnu.linkonce.s.*)
     . = ALIGN(8);
@@ -152,11 +153,15 @@ SECTIONS
   PROVIDE( __bss_end = . );
   PROVIDE( _end = . );
   PROVIDE( end = . );
+  PROVIDE( __heap_start = .);
 
   .stack ORIGIN(ram) + LENGTH(ram) - __stack_size :
   {
+    PROVIDE( __heap_end = . );
     PROVIDE( _heap_end = . );
     . = __stack_size;
     PROVIDE( _sp = . );
   } >ram AT>ram :ram
+
+  PROVIDE( __heap_size = __heap_end - __heap_start);
 }
