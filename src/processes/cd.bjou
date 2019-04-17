@@ -1,0 +1,145 @@
+# cd.bjou
+
+module process_cd
+
+using import "cstr.bjou"
+using import "console.bjou"
+using import "fs/ext2.bjou"
+
+type cd {
+    const STACK_SIZE := 512
+    const QM         := 1
+    const PROC_NAME  := "cd"
+
+    proc routine(data : void*, data_len : u32) {
+        inode_ptr := @(data as u32**)
+        str_input := (data + (sizeof u32*)) as char*
+
+        if data_len < sizeof u32* {
+            writeln("cd: input required")
+            return
+        } else if data_len == sizeof u32* + 1 {
+            @inode_ptr = 2u32
+            return
+        }
+       
+        new_inode_nr := 0u32
+
+        if str_input[0] == '/' {
+            new_inode_nr = cd_abs(str_input)
+        } else {
+            len := cstrlen(str_input)
+            if str_input[len - 1] == '/'
+                str_input[len - 1] = 0
+            new_inode_nr = cd_rel(@inode_ptr, str_input)
+        }
+    
+        if new_inode_nr == 0 {
+            write("cd: directory '")  write(str_input)  writeln("' not found.")
+            return
+        }
+
+        new_inode := _get_inode(new_inode_nr)
+
+        new_kind := new_inode.mode band 0xF000
+        if new_kind != 0x4000 {
+            write("cd: '")  write(str_input)  writeln("' is not a directory.")
+        } else {
+            @inode_ptr = new_inode_nr
+        }
+    }
+}
+
+proc cd_abs(str_input : char*) : u32 {
+    orig_len           := cstrlen(str_input)
+    has_trailing_slash := str_input[orig_len - 1] == '/'
+
+    buff_size := orig_len + 1
+
+    if not has_trailing_slash { buff_size += 1 }
+
+    buff := syscall::alloc(buff_size) as char*
+    mcopy(buff, str_input, orig_len)
+
+    if not has_trailing_slash {
+        buff[buff_size - 2] = '/'
+    }
+    
+    buff[buff_size - 1] = 0
+
+    buff += 1 # skip the first '/'
+
+    running_inode_nr := 2u32
+
+    last_ptr := buff 
+    for ptr := buff; @ptr; ptr += 1 {
+        if @ptr == '/' {
+            @ptr = 0
+            running_inode_nr = cd_rel(running_inode_nr, last_ptr)
+            if running_inode_nr == 0 {
+                break
+            } else {
+                inode := _get_inode(running_inode_nr)
+                kind  := inode.mode band 0xF000
+                if kind != 0x4000 {
+                    return 0
+                }
+            }
+            last_ptr = ptr + 1
+        }
+    }
+
+    return running_inode_nr
+}
+
+proc cd_rel(inode_nr : u32, str_input : char*) : u32 {
+    inode    := _get_inode(inode_nr)
+
+    found_inode := 0u32
+
+    for i := 0; i < 16; i += 1 {
+        if inode.block[i] == 0    { break }
+
+        dir_content_block := _get_block(inode.block[i]) as DirectoryEntry*
+        b_dir             := dir_content_block as void*
+        dir               := dir_content_block
+
+        seen_dot := false
+
+        bytes_consumed := 0
+
+        while bytes_consumed < ext2fs.block_size {
+            # tgt_inode := _get_inode(dir.inode)
+            nm_buff : char[32]
+            nm_ptr  : char* = nm_buff
+            for c := 0; c < dir.name_len; c += 1 {
+                @nm_ptr = dir.name[c]
+                nm_ptr += 1
+            }
+            @nm_ptr = 0
+
+            if cstrcmp(nm_buff, str_input) == 0 {
+                found_inode = dir.inode
+                break
+            }
+
+            bytes_consumed += dir.rec_len
+
+            b_dir += dir.rec_len
+            dir    = b_dir as DirectoryEntry*
+
+            if dir.inode   == 0
+            or dir.inode   == 1
+            or dir.rec_len == 0
+            or (    dir.name_len == 1
+                and dir.name[0] == '.')  {
+
+                break
+            }
+        }
+
+        if found_inode != 0    break
+    }
+
+    return found_inode
+}

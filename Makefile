@@ -6,7 +6,7 @@ CXX=$(CROSS)-g++
 AS=$(CROSS)-as
 GDB=$(CROSS)-gdb
 
-LDSFILE=lds/q_e31.lds
+LDSFILE=lds/qemu.lds
 ASFLAGS=-march=rv32ima -mabi=ilp32 -O0 -g
 LDFLAGS=-T$(LDSFILE) -march=rv32ima -mabi=ilp32 -O0 -g -nostartfiles -nostdinc -ffreestanding -nostdlib -L.
 OUT=$(NAME).elf
@@ -29,7 +29,7 @@ $(OUT): Makefile $(ASM_OBJECTS) $(BJOU_OBJECT) $(LDSFILE)
 	$(CC) $(ASFLAGS) -c $< -o $@
 
 $(BJOU_OBJECT):
-	bjou make_e31.bjou
+	bjou make.bjou
 
 qemu: $(OUT)
 	$(QEMU) $(QEMUARGS)

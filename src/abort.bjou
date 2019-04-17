@@ -8,12 +8,12 @@ using import "asm.bjou"
 using import "console.bjou"
 
 proc abort(msg : char*) {
-    write("ABORT: ")  writeln(msg)
+    # write("ABORT: ")  writeln(msg)
     while true    { asm$wfi() }
 }
 
 proc abort(msg : char*, val : u32) {
-    write("ABORT: ")
-    write(msg)  write(" (")  writehex(val)  writeln(")")
+    # write("ABORT: ")
+    # write(msg)  write(" (")  writehex(val)  writeln(")")
     while true    { asm$wfi() }
 }

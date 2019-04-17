@@ -66,6 +66,8 @@ type scheduler {
 
         this.add_to_tree(this.current.vruntime, this.current)
 
+        this.current = NULL as PCB*
+
         return this.schedule_next(mepc)
     }
 
@@ -81,32 +83,37 @@ type scheduler {
         while true {
             # writeln("searching for process to schedule")
             if p : (u32 ref, PCB* ref) = (@this.proc_tree).first() {
-                # write("found process ")  writehexln(p.1)
-                (@this.proc_tree).remove(p.0)
-                if not p.1.kill {
-                    # write("scheduling ")  writehexln(p.1)
-                    if p.1.waitpid != -1i16 {
-                        # write("found a waiting process ") writeln(p.1.pid as i32)
-                        if scheduler.array_of_pcbs_has_pid(all_pcbs, p.1.waitpid) {
-                            # write(p.1.pid as i32)  write(" still waiting on ")  writeln(p.1.waitpid as i32)
-                            waiting[n_waiting] = p.1
+                vrt := unref(p.0)
+                pcb := unref(p.1)
+                # write("found process ")  writeln(pcb.name)
+                (@this.proc_tree).remove(vrt)
+                if not pcb.kill {
+                    # write("scheduling ")  writeln(pcb.name)
+                    if pcb.waitpid != -1i16 {
+                        # write("found a waiting process ") writeln(pcb.name)
+                        if scheduler.array_of_pcbs_has_pid(all_pcbs, pcb.waitpid) {
+                            # write(pcb.name)  write(" still waiting on ")  writeln(pcb.waitpid as i32)
+                            waiting[n_waiting] = pcb
                             n_waiting += 1
                         } else {
-                            # write("restoring waiting process ") writeln(p.1.pid as i32)
-                            this.current         = p.1
+                            # write("restoring waiting process ") writeln(pcb.name)
+                            this.current         = pcb
                             this.current.waitpid = -1i16
                             break
                         }
-                    } else if p.1.sleep <= 0 {
-                        this.current = p.1
+                    } else if pcb.sleep <= 0 {
+                        this.current = pcb
                         break
                     } else {
-                        # write(p.1.pid as i32)  write(" is sleeping -- ")  write(p.1.sleep as i32)  writeln(" QMs left.")
-                        waiting[n_waiting] = p.1
+                        # write(pcb.pid as i32)  write(" is sleeping -- ")  write(pcb.sleep as i32)  writeln(" QMs left.")
+                        waiting[n_waiting] = pcb
                         n_waiting += 1
                     }
+                } else {
+                    # write(pcb.name)  writeln(" should die -- killing")
+                    kfree(pcb.stack_pointer as void*)
+                    kfree(pcb)
                 }
-                # writehex(p.1)  writeln(" should die -- killing")
             } else {
                 # writeln("no process to schedule")
                 if not all_pcbs.is_null()
@@ -134,10 +141,18 @@ type scheduler {
     }
 
     proc new_process(this, stack_size : u32, ip : u32, QM : u32, data : void*, data_len : u32, name : char*) : i32 {
-        # writeln("new_process()")
+        # write("new_process(")  write(name)  writeln(")")
         # write("Size of PCB struct: ")  writeln((sizeof PCB) as i32)
         pcb      := kmalloc(sizeof PCB) as PCB*
         stack    := kmalloc(stack_size)
+
+        if pcb.is_null() {
+            abort("could not allocate process!")
+        }
+        if stack.is_null() {
+            abort("could not allocate process stack!")
+        }
+
         data_dst := NULL
 
         # write("pcb:   ")  writehexln(pcb)
@@ -178,7 +193,7 @@ type scheduler {
         while true {
             if n : none = (@this.proc_tree).lookup(key) {
                 # write("inserting ")
-                # write(key as i32)  writeln(" into proc tree")
+                # write(key as i32)  write(" ")  write(val.name)  writeln(" into proc tree")
                 (@this.proc_tree).insert(key, val)
                 break
             }
@@ -274,8 +289,8 @@ proc reset_timers() {
 
     interval := FREQ / QMS_PER_SEC
 
-    mtime64 := ((cur_mhi as u64) bshl 32) + (cur_mlo as u64)
-    mtimecmp64 := mtime64 + interval
+    mtime64        := ((cur_mhi as u64) bshl 32) + (cur_mlo as u64)
+    mtimecmp64     := mtime64 + interval
     new_mtimecmphi := (mtimecmp64 bshr 32) as u32
     new_mtimecmplo := (mtimecmp64 band 0x00000000FFFFFFFF) as u32
 

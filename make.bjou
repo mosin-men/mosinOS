@@ -15,7 +15,7 @@ using import "build.bjou"
     options.nopreload    = true
     options.noabc        = true
     options.c            = true
-    # options.opt          = true
+    options.opt          = true
     options.time         = true
 
     options.module_search_paths.push("src")
@@ -27,6 +27,8 @@ using import "build.bjou"
     defs_path := "src/defs.bjou" 
     print "generating '%'", defs_path
     defs := DefsFile.create(defs_path, "defs")
+
+    defs.add_def(     "ANSI_ESC",        true)
 
     defs.add_def(     "QEMU",            0i64)
     defs.add_def(     "E31",             1i64)

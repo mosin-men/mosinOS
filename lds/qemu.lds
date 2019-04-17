@@ -18,7 +18,6 @@ PHDRS
 SECTIONS
 {
   __stack_size = DEFINED(__stack_size) ? __stack_size : 2K;
-  __kstack_size = 1K;
 
   .init           :
   {
@@ -47,6 +46,8 @@ SECTIONS
     *(.rdata)
     *(.rodata .rodata.*)
     *(.gnu.linkonce.r.*)
+    *(.incbin)
+    PROVIDE(__fs_start = _ext2fs);
   } >flash AT>flash :flash
 
   . = ALIGN(4);
@@ -154,11 +155,6 @@ SECTIONS
   PROVIDE( _end = . );
   PROVIDE( end = . );
   PROVIDE( __heap_start = .);
-
-  .kstack ORIGIN(ram) + LENGTH(ram) - __kstack_size - __stack_size :
-  {
-      PROVIDE( __kstack = . );
-  } >ram AT>ram :ram
 
   .stack ORIGIN(ram) + LENGTH(ram) - __stack_size :
   {

@@ -5,7 +5,7 @@ module process_game
 using import "console.bjou"
 using import "syscall.bjou"
 using import "ansi_escapes.bjou"
-using import "cstr.bjou"
+using import "random.bjou"
 
 const KEY_UNKNOWN := 0
 const KEY_UP      := 1
@@ -24,14 +24,28 @@ type game {
     proc routine(data : void*, data_len : u32) {
         echo_off()
 
+        seedrand(data as u32)
+
         game_move_cursor(0, 0)
         write(CLEAR_DISPLAY)
+
+        # snake_board : u32[11]
+        # mset(snake_board, 0, 11 * sizeof u32)
 
         score   := 0
         x       := 3
         y       := 3
-        thing_x := 15
+        # head_x  := 3
+        # head_y  := 3
+        # tail_x  := 3
+        # tail_y  := 4
+        thing_x := 5
         thing_y := 5
+
+        # set_snake_board(snake_board, head_x, head_y)
+        # set_snake_board(snake_board, tail_x, tail_y)
+
+        # draw_snake(snake_board)
 
         draw_level()
         draw_thing('@', thing_x, thing_y, x, y)
@@ -58,6 +72,9 @@ type game {
                 if x == thing_x and y == thing_y {
                     draw_thing(' ', thing_x, thing_y, x, y)
                     score += 1
+                    thing_x = getrand(3, 33)
+                    thing_y = getrand(3, 12)
+                    draw_thing('@', thing_x, thing_y, x, y)
                 }
             }
         }
@@ -68,6 +85,10 @@ type game {
         echo_on()
     }
 }
+
+# proc set_snake_board(board : u32*, x : u32, y : u32) {
+#     board[y] = board[y] bor (1 bshl (32 - x))
+# }
 
 proc game_move_cursor(x : i32, y : i32) {
     write("\e[")

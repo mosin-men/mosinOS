@@ -8,6 +8,7 @@ using import "console.bjou"
 using import "syscall.bjou"
 using import "cstr.bjou"
 using import "ansi_escapes.bjou"
+using import "defs.bjou"
 
 using import "processes/mkproc.bjou"
 using import "processes/echo.bjou"
@@ -17,6 +18,12 @@ using import "processes/kill.bjou"
 using import "processes/top.bjou"
 using import "processes/calc.bjou"
 using import "processes/game.bjou"
+using import "processes/snake.bjou"
+using import "processes/forkbomb.bjou"
+using import "processes/fsinfo.bjou"
+using import "processes/ls.bjou"
+using import "processes/cd.bjou"
+using import "processes/cat.bjou"
 
 type sh {
     const STACK_SIZE := 1024
@@ -24,12 +31,11 @@ type sh {
     const PROC_NAME  := "sh"
 
     proc routine(data : void*, data_len : u32) {
-        buff := syscall::alloc(128) as char*
-
-        cls()
+        buff          := syscall::alloc(128) as char*
+        current_inode := 2u32 # 2 is the file system root
 
         while true {
-            get_input(data as char*, buff)
+            get_input(data as char*, buff, current_inode)
             line         := trim_spc(buff)
             spc_idx      := find_space(line)
             line[spc_idx] = 0
@@ -42,25 +48,71 @@ type sh {
                 prg += 1
             }
 
-            if      cstrcmp(prg, "echo")  == 0 { exec $ echo(wait, arg_data)        }
-            else if cstrcmp(prg, "sh")    == 0 { exec $ sh(wait, arg_data)          }
-            else if cstrcmp(prg, "loop")  == 0 { exec $ loop(wait, arg_data)        }
-            else if cstrcmp(prg, "sleep") == 0 { exec $ sleep(wait, arg_data)       }
-            else if cstrcmp(prg, "kill")  == 0 { exec $ kill(wait, arg_data)        }
-            else if cstrcmp(prg, "top")   == 0 { exec $ top(wait, arg_data)         }
-            else if cstrcmp(prg, "calc")  == 0 { exec $ calc(wait, arg_data)        }
-            else if cstrcmp(prg, "game")  == 0 { exec $ game(wait, arg_data)        }
-            else if cstrcmp(prg, "clear") == 0 { cls()                              }
-            else if cstrcmp(prg, "help")  == 0 { print_help()                       }
-            else if cstrcmp(prg, "exit")  == 0 { break                              }
-            else                               { write("unknown process/command '")
-                                                 write(prg)
-                                                 writeln("'")                       }
+            if      cstrcmp(prg, "echo")     == 0 { exec $ echo(wait, arg_data)        }
+            else if cstrcmp(prg, "sh")       == 0 { exec $ sh(wait, arg_data)          }
+            else if cstrcmp(prg, "loop")     == 0 { exec $ loop(wait, arg_data)        }
+            else if cstrcmp(prg, "sleep")    == 0 { exec $ sleep(wait, arg_data)       }
+            else if cstrcmp(prg, "kill")     == 0 { exec $ kill(wait, arg_data)        }
+            else if cstrcmp(prg, "top")      == 0 { exec $ top(wait, arg_data)         }
+            else if cstrcmp(prg, "calc")     == 0 { exec $ calc(wait, arg_data)        }
+            else if cstrcmp(prg, "game")     == 0 { \static_if{ ANSI_ESC
+                                                        exec $ game(wait, arg_data) }
+                                                    \static_if{ not ANSI_ESC
+                                                        writeln("ansi escape support is required for 'game'.") }
+                                                                                       }
+             else if cstrcmp(prg, "snake")   == 0 { \static_if{ ANSI_ESC
+                                                        exec $ snake(wait, arg_data) }
+                                                    \static_if{ not ANSI_ESC
+                                                        writeln("ansi escape support is required for 'snake'.") }
+                                                                                       }
+            else if cstrcmp(prg, "forkbomb") == 0 { exec $ forkbomb(wait, arg_data)    }
+            else if cstrcmp(prg, "fsinfo")   == 0 { exec $ fsinfo(wait, arg_data)      }
+            else if cstrcmp(prg, "ls")       == 0 { do_ls(wait, arg_data, current_inode) }
+            else if cstrcmp(prg, "cd")       == 0 { do_cd(wait, arg_data, current_inode) }
+            else if cstrcmp(prg, "cat")      == 0 { do_cat(wait, arg_data, current_inode)}
+            else if cstrcmp(prg, "clear")    == 0 { cls()                              }
+            else if cstrcmp(prg, "help")     == 0 { print_help()                       }
+            else if cstrcmp(prg, "exit")     == 0 { break                              }
+            else                                  { write(YELLOW)
+                                                    write("unknown process/command '")
+                                                    write(prg)
+                                                    write("'")
+                                                    write(RESET)
+                                                    writeln()                          }
         }
 
         writeln("Goodbye.")
         syscall::free(buff)
     }
+}
+
+proc do_cat(wait : bool, data : char*, current_inode : u32) {
+    size := cstrlen(data) + sizeof u32 + 1
+    cat_buff := syscall::alloc(size)
+    @((cat_buff + size - 1) as char*) = 0
+    @(cat_buff as u32*) = current_inode
+    mcopy(cat_buff + sizeof u32, data, cstrlen(data))
+    pid := mkproc$cat(cat_buff, cstrlen(data) + 1 + sizeof u32)
+    if wait    { syscall::waitpid(pid) }
+    else       { writeln(pid) }
+    syscall::free(cat_buff)
+}
+
+proc do_ls(wait : bool, data : char*, current_inode : u32) {
+    itoa(current_inode, data)
+    exec $ ls(wait, data)
+}
+
+proc do_cd(wait : bool, data : char*, current_inode : u32 ref) {
+    size := cstrlen(data) + sizeof u32* + 1
+    cd_buff := syscall::alloc(size)
+    @((cd_buff + size - 1) as char*) = 0
+    @(cd_buff as u32**) = &current_inode
+    mcopy(cd_buff + sizeof u32*, data, cstrlen(data))
+    pid := mkproc$cd(cd_buff, cstrlen(data) + 1 + sizeof u32*)
+    if wait    { syscall::waitpid(pid) }
+    else       { writeln(pid) }
+    syscall::free(cd_buff)
 }
 
 proc exec$T(wait : bool, data : char*) {
@@ -81,19 +133,20 @@ proc find_space(line : char*) : u32 {
     return line - line_sav
 }
 
-proc get_input(prompt : char*, buff : char*) {
-    write(prompt)  write(" $ ")
+proc get_input(prompt : char*, buff : char*, current_inode : u32) {
+    write(prompt)    write(" $ ")
     readln(buff)
     l := cstrlen(buff) - 1
     buff[l] = 0
 }
 
 proc sh_move_cursor(x : u32, y : u32) {
-    write("\e[")
-    write(y as i32)
-    write(';')
-    write(x as i32)
-    write('H')
+    \static_if{ ANSI_ESC
+        write("\e[")
+        write(y as i32)
+        write(';')
+        write(x as i32)
+        write('H') }
 }
 
 proc cls() {
@@ -111,8 +164,14 @@ proc print_help() {
     sleep SECONDS     sleeping process
     kill PID          kill a process
     top [PID]         view active processes
-    calc              basic calculator
+    calc              basic integer calculator
     game              a fun game
+    snake             a fun snake game
+    forkbomb          
+    fsinfo            show info about the ext2 filesystem 
+    ls                list files in the current directory
+    cd [PATH]         change the current directory
+    cat FILE          output file contents
    
 Available commands are:
     exit              leave the shell

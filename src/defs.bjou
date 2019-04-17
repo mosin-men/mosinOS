@@ -2,8 +2,9 @@
 
 module defs
 
+const ANSI_ESC := 1
 const QEMU := 0
 const E31 := 1
 const HIFIVE := 2
-const TARGET := E31
+const TARGET := QEMU
 const CONSOLE_BUFF_SZ := 256

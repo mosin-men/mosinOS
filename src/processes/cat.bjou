@@ -1,0 +1,110 @@
+# cat.bjou
+
+module process_cat
+
+using import "console.bjou"
+
+type cat {
+    const STACK_SIZE := 1024
+    const QM         := 1
+    const PROC_NAME  := "cat"
+
+    proc routine(data : void*, data_len : u32) {
+        inode_nr := @(data as u32*)
+        str_input := (data + (sizeof u32)) as char*
+
+        if data_len <= sizeof u32 + 1 {
+            writeln("cat: input required")
+            return
+        }
+
+        file_inode_nr := find_file_inode_nr(inode_nr, str_input)
+        if file_inode_nr == 0 {
+            write("cat: file '")  write(str_input)  writeln("' not found.")
+            return
+        }
+
+        file_inode := _get_inode(file_inode_nr)
+
+        file_kind := file_inode.mode band 0xF000
+        if file_kind == 0x4000 {
+            write("cat: '")  write(str_input)  writeln("' is a directory.")
+            return
+        }
+
+        cat_file(file_inode)
+    }
+}
+
+proc cat_file(inode : Inode*) {
+    size := inode.size
+
+    bytes_consumed := 0
+
+    for b := 0; b < inode.blocks; b += 1 {
+        block_nr             := inode.block[b]
+        block_data           := _get_block(block_nr) as char*
+        data_ptr             := block_data
+        block_bytes_consumed := 0
+
+        while bytes_consumed < size
+        and   block_bytes_consumed < 1024 {
+            write(@data_ptr)
+            data_ptr             += 1
+            bytes_consumed       += 1
+            block_bytes_consumed += 1
+        }
+    }
+}
+
+proc find_file_inode_nr(inode_nr : u32, name : char*) : u32 {
+    inode    := _get_inode(inode_nr)
+
+    found_inode := 0u32
+
+    for i := 0; i < 16; i += 1 {
+        if inode.block[i] == 0    { break }
+
+        dir_content_block := _get_block(inode.block[i]) as DirectoryEntry*
+        b_dir             := dir_content_block as void*
+        dir               := dir_content_block
+
+        seen_dot := false
+
+        bytes_consumed := 0
+
+        while bytes_consumed < ext2fs.block_size {
+            # tgt_inode := _get_inode(dir.inode)
+            nm_buff : char[32]
+            nm_ptr  : char* = nm_buff
+            for c := 0; c < dir.name_len; c += 1 {
+                @nm_ptr = dir.name[c]
+                nm_ptr += 1
+            }
+            @nm_ptr = 0
+
+            if cstrcmp(nm_buff, name) == 0 {
+                found_inode = dir.inode
+                break
+            }
+
+            bytes_consumed += dir.rec_len
+
+            b_dir += dir.rec_len
+            dir    = b_dir as DirectoryEntry*
+
+            if dir.inode   == 0
+            or dir.inode   == 1
+            or dir.rec_len == 0
+            or (    dir.name_len == 1
+                and dir.name[0] == '.')  {
+
+                break
+            }
+        }
+
+        if found_inode != 0    break
+    }
+
+    return found_inode
+}

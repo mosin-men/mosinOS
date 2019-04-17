@@ -16,6 +16,10 @@ using import "cstr.bjou"
 using import "util.bjou"
 using import "error.bjou"
 using import "none.bjou"
+using import "defs.bjou"
+using import "ansi_escapes.bjou"
+
+const NL_STR := "\r\n"
 
 _con       : console
 
@@ -49,6 +53,8 @@ type console {
     }
 
     proc readln(this, dst : char*) {
+        ptr := dst
+
         c := '\0'
         while true {
             while not (c = this.read_fn()) {}
@@ -57,6 +63,13 @@ type console {
                 @dst = '\n'
                 dst += 1
                 break
+            } else if c == 127 {
+                if dst != ptr {
+                    dst -= 1
+                    @dst = '\0'
+                    write(CURSOR_LEFT)
+                    write(CLEAR_LINE)
+                }
             } else {
                 @dst = c
                 dst += 1
@@ -133,19 +146,19 @@ proc writebin(u : u32) {
 }
 
 proc writeln() {
-    _con.write("\n")
+    _con.write(NL_STR)
 }
 
 proc writeln(c : char) {
     _con.write(c)
-    _con.write('\n')
+    _con.write(NL_STR)
 }
 
 proc writeln(i : i32) {
     buff : char[64]
     itoa(i, buff)
     _con.write(buff)
-    _con.write("\n")
+    _con.write(NL_STR)
 }
 
 proc writehexln(u : u32) {
@@ -153,7 +166,7 @@ proc writehexln(u : u32) {
     itoax(u, buff)
     _con.write("0x")
     _con.write(buff)
-    _con.write("\n")
+    _con.write(NL_STR)
 }
 
 proc writehexln(p : void*) {
@@ -161,19 +174,19 @@ proc writehexln(p : void*) {
     itoax(ptr_to_u32(p), buff)
     _con.write("0x")
     _con.write(buff)
-    _con.write("\n")
+    _con.write(NL_STR)
 }
 
 proc writebinln(u : u32) {
     buff : char[33]
     itoab(u, buff)
     _con.write(buff)
-    _con.write("\n")
+    _con.write(NL_STR)
 }
 
 proc writeln(s : char*) {
     _con.write(s)
-    _con.write("\n")
+    _con.write(NL_STR)
 }
 
 proc echo_on() {

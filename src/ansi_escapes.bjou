@@ -2,35 +2,165 @@
 
 module ansi_escapes
 
-const RESET         := "\e[0m"
-const BOLD          := "\e[1m"
-const UNDERLINE     := "\e[4m"
-const BLINK         := "\e[5m"
-const INVERT        := "\e[7m"
-const BOLD_OFF      := "\e[22m"
-const UNDERLINE_OFF := "\e[24m"
-const BLINK_OFF     := "\e[25m"
-const INVERT_OFF    := "\e[27m"
-const BLACK         := "\e[30m"
-const RED           := "\e[31m"
-const GREEN         := "\e[32m"
-const YELLOW        := "\e[33m"
-const BLUE          := "\e[34m"
-const MAGENTA       := "\e[35m"
-const CYAN          := "\e[36m"
-const WHITE         := "\e[37m"
-const BG_BLACK      := "\e[40m"
-const BG_RED        := "\e[41m"
-const BG_GREEN      := "\e[42m"
-const BG_YELLOW     := "\e[43m"
-const BG_BLUE       := "\e[44m"
-const BG_MAGENTA    := "\e[45m"
-const BG_CYAN       := "\e[46m"
-const BG_WHITE      := "\e[47m"
+using import "defs.bjou"
 
-const CURSOR_UP     := "\e[1A"
-const CURSOR_DOWN   := "\e[1B"
-const CURSOR_RIGHT  := "\e[1C"
-const CURSOR_LEFT   := "\e[1D"
+\static_if{ ANSI_ESC
+    const RESET         := "\e[0m"
+    const BOLD          := "\e[1m"
+    const UNDERLINE     := "\e[4m"
+    const BLINK         := "\e[5m"
+    const INVERT        := "\e[7m"
+    const BOLD_OFF      := "\e[22m"
+    const UNDERLINE_OFF := "\e[24m"
+    const BLINK_OFF     := "\e[25m"
+    const INVERT_OFF    := "\e[27m"
+    const BLACK         := "\e[30m"
+    const RED           := "\e[31m"
+    const GREEN         := "\e[32m"
+    const YELLOW        := "\e[33m"
+    const BLUE          := "\e[34m"
+    const MAGENTA       := "\e[35m"
+    const CYAN          := "\e[36m"
+    const WHITE         := "\e[37m"
+    const BG_BLACK      := "\e[40m"
+    const BG_RED        := "\e[41m"
+    const BG_GREEN      := "\e[42m"
+    const BG_YELLOW     := "\e[43m"
+    const BG_BLUE       := "\e[44m"
+    const BG_MAGENTA    := "\e[45m"
+    const BG_CYAN       := "\e[46m"
+    const BG_WHITE      := "\e[47m"
 
-const CLEAR_DISPLAY := "\e[2J"
+    const CURSOR_UP     := "\e[1A"
+    const CURSOR_DOWN   := "\e[1B"
+    const CURSOR_RIGHT  := "\e[1C"
+    const CURSOR_LEFT   := "\e[1D"
+
+    const CLEAR_LINE    := "\e[K"
+    const CLEAR_DISPLAY := "\e[2J" }
+
+\static_if{ not ANSI_ESC
+    const RESET         := ""
+    const BOLD          := ""
+    const UNDERLINE     := ""
+    const BLINK         := ""
+    const INVERT        := ""
+    const BOLD_OFF      := ""
+    const UNDERLINE_OFF := ""
+    const BLINK_OFF     := ""
+    const INVERT_OFF    := ""
+    const BLACK         := ""
+    const RED           := ""
+    const GREEN         := ""
+    const YELLOW        := ""
+    const BLUE          := ""
+    const MAGENTA       := ""
+    const CYAN          := ""
+    const WHITE         := ""
+    const BG_BLACK      := ""
+    const BG_RED        := ""
+    const BG_GREEN      := ""
+    const BG_YELLOW     := ""
+    const BG_BLUE       := ""
+    const BG_MAGENTA    := ""
+    const BG_CYAN       := ""
+    const BG_WHITE      := ""
+
+    const CURSOR_UP     := ""
+    const CURSOR_DOWN   := ""
+    const CURSOR_RIGHT  := ""
+    const CURSOR_LEFT   := ""
+
+    const CLEAR_LINE    := ""
+    const CLEAR_DISPLAY :=
+"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+" }

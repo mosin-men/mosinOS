@@ -97,21 +97,21 @@ proc async_handler(code : u32, mepc : u32, mtval : u32) : u32 {
 
 proc sync_handler(code : u32, mepc : u32, mtval : u32) : u32 {
     if code == IADDMISS   {
-        writeln("IADDMISS")
+        abort("IADDMISS")
     } else if code == IACCESS    {
-        writeln("IACCESS")
+        abort("IACCESS")
     } else if code == ILLINST    {
         abort("Instruction access fault!", mtval)
     } else if code == BREAKPT    {
         writeln("BREAKPT")
     } else if code == LDADDMISS  {
-        writeln("LDADDMISS")
+        abort("LDADDMISS")
     } else if code == LDACCESS   {
-        writeln("LDACCESS")
+        abort("LDACCESS")
     } else if code == STADDMISS  {
-        writeln("STADDMISS")
+        abort("STADDMISS")
     } else if code == STACCESS   {
-        writeln("STACCESS")
+        abort("STACCESS")
     } else if code == UECALL     {
         writeln("UECALL")
         write("Got syscall number ")

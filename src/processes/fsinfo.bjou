@@ -1,0 +1,16 @@
+# fsinfo.bjou
+
+module process_fsinfo
+
+using import "console.bjou"
+using import "fs/ext2.bjou"
+
+type fsinfo {
+    const STACK_SIZE := 512
+    const QM         := 1
+    const PROC_NAME  := "fsinfo"
+
+    proc routine(data : void*, data_len : u32) {
+        ext2::_get_fs_info() 
+    }
+}

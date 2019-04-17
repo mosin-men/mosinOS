@@ -48,11 +48,13 @@ proc msyscall(code : u32) {
 
 proc syscall(code : u32, arg0 : u32, arg1 : u32, arg2 : u32, arg3 : u32, arg4 : u32, arg5 : u32) : u32 {
     result := asm$ecall(code, arg0, arg1, arg2, arg3, arg4, arg5)
+
     if code == EXIT
-        while true asm$wfi()
-    else if code == WAITPID
-         or code == SLEEP
+    or code == WAITPID
+    or code == SLEEP {
         asm$wfi()
+    }
+
     return result
 }
 proc alloc(n_bytes : u32) : void* { return syscall(ALLOC, n_bytes, 0, 0, 0, 0, 0) as void* }

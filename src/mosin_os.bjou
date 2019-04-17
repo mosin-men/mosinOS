@@ -13,6 +13,7 @@ import "defs.bjou"
 import "trap.bjou"
 import "uart.bjou"
 using import "console.bjou"
+using import "ansi_escapes.bjou"
 using import "asm.bjou"
 using import "util.bjou"
 using import "PCB.bjou"
@@ -20,41 +21,42 @@ using import "atomics/locks.bjou"
 using import "syscall.bjou"
 using import "heap.bjou"
 using import "sched.bjou"
+using import "fs/ext2.bjou"
 using import "abort.bjou"
 using import "processes/init.bjou"
 using import "processes/mkproc.bjou"
 
 proc __no_mangle__ main() {
-    uart::init()
-    console::init()
-    writeln("hello, world")
-    while true asm$wfi()
+    asm$disable_pmp()
     # Initialize core components.
-    # if  start_component("uart",    uart   ::init)
-    # and start_component("console", console::init)
-    # and start_component("heap",    heap   ::init)
-    # and start_component("sched",   sched  ::init) {
-    #     # Turn on timer interrupts.
-    #     asm$enable_interrupts()
-    #     # Enter user mode
-    #     asm$umode_switch() 
-
-    #     if start_component("init", init_init) {
-    #         # spin and let processes take over
-    #         while true    { asm$wfi() }
-    #     }
-    # }
+    if  start_component("uart",    uart   ::init)
+    and start_component("console", console::init)
+    and start_component("heap",    heap   ::init)
+    # and start_component("fs/ext2", ext2   ::init)
+    and start_component("sched",   sched  ::init)
+    and start_component("init",        init_init) {
+        # Turn on timer interrupts.
+        asm$enable_interrupts()
+        # Enter user mode
+        asm$umode_switch() 
+        # spin and let processes take over
+        while true    { asm$wfi() }
+    }
     
-    # abort("Boot failure.")
+    abort("Boot failure.")
 }
 
 proc init_init() : (error | none) {
-    pid := mkproc$process_init::init()
+    pid := sched.new_process(
+            process_init::init.STACK_SIZE,
+            (routine_exit_wrapper$process_init::init as void*) as u32,
+            process_init::init.QM,
+            NULL,
+            0,
+            process_init::init.PROC_NAME)
+
     if pid == -1 {
-        return { error:
-            .code = 1,
-            .msg = "Could not start 'init' process."
-        }
+        return { error: .code = 1, .msg = "Could not start 'init' process." }
     }
 
     return { none: }
@@ -72,8 +74,11 @@ proc init_message(comp_name : char*, status : (error | none)) {
     write("[ ") writepad(comp_name, 7)  write(" ] ")
 
     if err : error = status {
+        write(RED)
         write("ERROR (")  write(err.code)  write(") ")  writeln(err.msg)
     } else {
+        write(GREEN)
         writeln("Ok.")
     }
+    write(RESET)
 }

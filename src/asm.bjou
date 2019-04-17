@@ -34,6 +34,8 @@ extern _umode_switch()
 abstract type umode_switch { const routine := _umode_switch }
 extern _mmode_switch()
 abstract type mmode_switch { const routine := _mmode_switch }
+extern _disable_pmp()
+abstract type disable_pmp { const routine := _disable_pmp }
 # end bindings and type wrappers
 
 proc asm$T() : u32 {

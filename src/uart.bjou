@@ -17,19 +17,17 @@ using import "none.bjou"
     const ADDR         := (0x10013000u32 as void*) }
 
 const BAUD_RATE    := 115200u32
-const UART_DIVISOR := FREQ / BAUD_RATE - 1u32
+const UART_DIVISOR := (FREQ / BAUD_RATE) - 1u32
 
 # Offsets for UART registers. Actual addresses can be calculated by:
 #   ADDR + (<register> * 4).
-enum UartRegisters {
-    TXDATA,
-    RXDATA,
-    TXCTRL,
-    RXCTRL,
-    IE,
-    IP,
-    DIV
-}
+const TXDATA := 0u32
+const RXDATA := 1u32
+const TXCTRL := 2u32
+const RXCTRL := 3u32
+const IE     := 4u32
+const IP     := 5u32
+const DIV    := 6u32
 
 #    Since this is a memory-mapped device, we can just have an empty struct
 #    with some implementation functions for now and directly manipulate the
@@ -42,22 +40,18 @@ enum UartRegisters {
 proc init() : (error | none) {
     mem := ADDR as u32*
 
-    #    Enable both send and receive. Consider breaking this out into
-    #    separate functions later, for finer control.
-    #    Set bit 32 (1 << 31) and bit 31 (1 << 30)
+    #    Enable both send and receive.
     txreg := 0u32
-    txreg = txreg bor (1u32 bshl 31u32)
-    txreg = txreg bor (1u32 bshl 30u32)
+    txreg = txreg bor 1u32
     
-    #    Set bit 32 (1 << 31)
     rxreg := 0u32
-    rxreg = rxreg bor (1u32 bshl 31u32)
+    rxreg = rxreg bor 1u32
 
     #    Populate the memory for the divisor, the transmit control register,
     #    and the receive control register
-    \volatile_w{ @(mem + (UartRegisters.DIV    as u32)) = UART_DIVISOR }
-    \volatile_w{ @(mem + (UartRegisters.TXCTRL as u32)) = txreg        }
-    \volatile_w{ @(mem + (UartRegisters.RXCTRL as u32)) = rxreg        }
+    \volatile_w{ @(mem + DIV)    = UART_DIVISOR }
+    \volatile_w{ @(mem + TXCTRL) = txreg        }
+    \volatile_w{ @(mem + RXCTRL) = rxreg        }
 
     return { none: }
 }
@@ -68,7 +62,7 @@ proc read() : char {
     mem := ADDR as u32*
 
     #    Read from the FIFO and see if data is available.
-    val := \volatile_r{ @(mem + (UartRegisters.RXDATA as u32)) }
+    val := \volatile_r{ @(mem + RXDATA) }
 
     #    Make sure we actually got something. If so, return it. Otherwise,
     #    return NOTHING
@@ -81,7 +75,7 @@ proc read() : char {
 
 proc read_echo() : char {
     c := read()
-    if c == '\r'    write('\n')
+    if c == '\r'    { write('\r')  write('\n') }
     else            write(c)
     return c
 }
@@ -90,14 +84,14 @@ proc write(out : char) {
     mem := ADDR as u32*
     
     # Check to ensure the FIFO isn't full and spin if it is.
-    # while true {
-    #     fifo_full := \volatile_r{ @(mem + (UartRegisters.TXDATA as u32)) }
-    #     if (fifo_full band (1u32 bshl 31u32)) == 0
-    #         break
-    # }
+    while true {
+        fifo_full := \volatile_r{ @(mem + TXDATA) }
+        if (fifo_full band (1u32 bshl 31u32)) == 0
+            break
+    }
     
     #    Since we're out of the above loop, we can write the char to data
-    \volatile_w{ @(mem + (UartRegisters.TXDATA as u32)) = out as u32 }
+    \volatile_w{ @(mem + TXDATA) = out as u32 }
 }
 
 proc write_string(s : char*) {

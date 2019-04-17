@@ -1,0 +1,16 @@
+# forkbomb.bjou
+
+module process_forkbomb
+
+using import "processes/mkproc.bjou"
+
+type forkbomb {
+    const STACK_SIZE := 512
+    const QM         := 1
+    const PROC_NAME  := "forkbomb"
+
+    proc routine(data : void*, data_len : u32) {
+        writeln("forkbomb")
+        while true    { mkproc$process_forkbomb::forkbomb() }
+    }
+}

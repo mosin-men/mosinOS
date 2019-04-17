@@ -6,7 +6,7 @@ using import "console.bjou"
 using import "asm.bjou"
 
 type echo {
-    const STACK_SIZE := 256
+    const STACK_SIZE := 1024
     const QM         := 1
     const PROC_NAME  := "echo"
 

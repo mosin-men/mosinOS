@@ -1,0 +1,70 @@
+# ls.bjou
+
+module process_ls
+
+using import "console.bjou"
+using import "fs/ext2.bjou"
+
+type ls {
+    const STACK_SIZE := 1024
+    const QM         := 1
+    const PROC_NAME  := "ls"
+
+    proc routine(data : void*, data_len : u32) {
+        i_n := 2
+        if data_len >= 2    { i_n = atoi(data as char*) }
+
+        inode := _get_inode(i_n)
+
+        kind := inode.mode band 0xF000
+        if kind != 0x4000 {
+            writeln("ls: not a directory")
+            return
+        }
+
+        for i := 0; i < 16; i += 1 {
+            if inode.block[i] == 0    { break }
+
+            dir_content_block := _get_block(inode.block[i]) as DirectoryEntry*
+            b_dir             := dir_content_block as void*
+            dir               := dir_content_block
+
+            seen_dot := false
+
+            bytes_consumed := 0
+
+            while bytes_consumed < ext2fs.block_size {
+                # tgt_inode := _get_inode(dir.inode)
+                nm_buff : char[32]
+                nm_ptr  : char* = nm_buff
+                for c := 0; c < dir.name_len; c += 1 {
+                    @nm_ptr = dir.name[c]
+                    nm_ptr += 1
+                }
+                if dir.file_type == 2 {
+                    @nm_ptr = '/'
+                    nm_ptr += 1
+                }
+                @nm_ptr = 0
+
+                file_inode := _get_inode(dir.inode)
+
+                writepad(nm_buff, 32)  write(" ")  writeln(file_inode.size as i32)
+            
+                bytes_consumed += dir.rec_len
+
+                b_dir += dir.rec_len
+                dir    = b_dir as DirectoryEntry*
+
+                if dir.inode   == 0
+                or dir.inode   == 1
+                or dir.rec_len == 0
+                or (    dir.name_len == 1
+                    and dir.name[0] == '.')  {
+
+                    break
+                }
+            }
+        }
+    }
+}
