@@ -122,6 +122,14 @@ unsafe fn mecall(code:u32){
 
 #[no_mangle]
 fn main() -> () {
+    unsafe {
+        asm!("csrw 0x3b0, $0\ncsrw 0x3a0, $1\n"
+             :
+             : "r"(-1isize), "r"(0x1fusize)
+             :
+             : "volatile"
+            );
+    }
     /* Initialize */
     //let mut fs = ext2::Ext2FS::init();
     //fs.get_fs_info();
