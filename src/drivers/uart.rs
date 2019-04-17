@@ -17,7 +17,8 @@ mod uart_config {
 
 #[cfg(target="hifive")]
 mod uart_config {
-    const ADDR: u32 = 0x1001_3000;
+    //const ADDR: u32 = 0x1001_3000;
+    const ADDR: u32 = 0x2000_0000;
 }
 
 const BAUD_RATE: u32 = 115_200;
