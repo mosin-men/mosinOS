@@ -51,12 +51,12 @@ impl UartDevice {
            separate functions later, for finer control. */
         /* Set bit 32 (1 << 31) and bit 31 (1 << 30) */
         let mut txreg: u32 = 0;
-        txreg |= 1 << 31;
-        txreg |= 1 << 30;
+        txreg |= 1;
+        txreg |= 2;
         
         /* Set bit 32 (1 << 31) */
         let mut rxreg: u32 = 0;
-        rxreg |= 1 << 31;
+        rxreg |= 1;
 
         /* Populate the memory for the divisor, the transmit control register,
            and the receive control register */
