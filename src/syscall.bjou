@@ -10,6 +10,7 @@ using import "sched.bjou"
 using import "util.bjou"
 using import "PCB.bjou"
 using import "abort.bjou"
+using import "brkpt.bjou"
 
 const EXIT    := 1u32
 const WRITE   := 2u32
@@ -31,6 +32,7 @@ const MMODE   := 3u32
 type process_info {
     pid      : i16
     vruntime : u32
+    QM       : u32
     name     : char*
     waitpid  : i16
     sleep    : i16
@@ -67,7 +69,7 @@ proc waitpid(pid : i32) : u32 { return syscall(WAITPID, pid as u32, 0, 0, 0, 0, 
 proc kill(pid : i32) : u32 { return syscall(KILL, pid as u32, 0, 0, 0, 0, 0) }
 proc nproc() : u32 { return syscall(NPROC, 0, 0, 0, 0, 0, 0) }
 proc procs(ptr : process_info**) : u32 { return syscall(PROCS, ptr_to_u32(ptr), 0, 0, 0, 0, 0) }
-proc sleep(secs : u32) { syscall(SLEEP, secs, 0, 0, 0, 0, 0) }
+proc sleep(msecs : u32) { syscall(SLEEP, msecs, 0, 0, 0, 0, 0) }
 proc mypid() : i16 { return syscall(MYPID, 0, 0, 0, 0, 0, 0) as i16 }
 
 proc handle_syscall(code : u32, arg0 : u32, arg1 : u32, arg2 : u32, arg3 : u32, arg4 : u32, arg5 : u32) : u32 {
@@ -139,8 +141,10 @@ proc handle_nproc() : u32 {
 }
 proc handle_procs(out : u32) : u32 {
     all_pcbs := sched.collect_all_procs()
-    if all_pcbs.is_null()
-        return 1
+    if all_pcbs.is_null() {
+        @u32_to_ptr$(process_info*)(out) = NULL as process_info*
+        return 0
+    }
    
     n := 0
     for ptr := all_pcbs; not (@ptr).is_null(); ptr += 1 {
@@ -150,7 +154,7 @@ proc handle_procs(out : u32) : u32 {
     proc_infos := kmalloc(n * sizeof process_info) as process_info*
 
     if proc_infos.is_null()
-        abort("Could not allocate process_info array!")
+        abort("Could not allocate process_info array!", n)
 
     for i := 0; i < n; i += 1 {
         pcb  := getref(@all_pcbs[i])
@@ -158,6 +162,7 @@ proc handle_procs(out : u32) : u32 {
 
         info.pid      = pcb.pid
         info.vruntime = pcb.vruntime
+        info.QM       = pcb.QM
         info.name     = pcb.name
         info.waitpid  = pcb.waitpid
         info.sleep    = pcb.sleep
@@ -165,14 +170,21 @@ proc handle_procs(out : u32) : u32 {
         proc_infos[i] = info
     }
 
+    kfree(all_pcbs)
+
     @u32_to_ptr$(process_info*)(out) = proc_infos
 
     return n
 }
-proc handle_sleep(secs : u32) : u32 {
-    if sched.current.is_null()
+proc handle_sleep(msecs : u32) : u32 {
+    if sched.current.is_null() {
         return 1
-    sched.current.sleep = sched::QMS_PER_SEC * secs
+    }
+
+    ms_per_quantum : u32 = 1000u32 / QMS_PER_SEC
+    sleep_quantums : u32 = msecs / ms_per_quantum
+    sched.current.sleep = sleep_quantums
+
     return 0
 }
 proc handle_mypid() : u32 {

@@ -1,13 +1,13 @@
 # uart.bjou
 #
-# UART driver code
+# UART drivjr code
 
 module uart
 
 using import "defs.bjou"
 using import "machine_info.bjou"
-using import "error.bjou"
-using import "none.bjou"
+using import "component_result.bjou"
+using none
 
 \static_if{ TARGET == QEMU
     const ADDR         := (0x10013000u32 as void*) }
@@ -37,7 +37,7 @@ const DIV    := 6u32
 #    Load the divisor into the UartRegisters.DIV register. This MUST be
 #    called prior to attempting to read from/write to the UART.
 
-proc init() : (error | none) {
+proc init() : component_result {
     mem := ADDR as u32*
 
     #    Enable both send and receive.
@@ -52,6 +52,10 @@ proc init() : (error | none) {
     \volatile_w{ @(mem + DIV)    = UART_DIVISOR }
     \volatile_w{ @(mem + TXCTRL) = txreg        }
     \volatile_w{ @(mem + RXCTRL) = rxreg        }
+
+    # test and make room for OS status bar
+    write('\r')
+    write('\n')
 
     return { none: }
 }

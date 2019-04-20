@@ -1,0 +1,8 @@
+# component_result.bjou
+
+module component_result
+
+using import "none.bjou"
+using import "error.bjou"
+
+type component_result = (error | warning | none)

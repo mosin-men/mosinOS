@@ -1,0 +1,22 @@
+# brkpt.bjou
+
+module brkpt
+
+using import "console.bjou"
+
+proc cbrkpt(cond : bool, label : char*, val : i32) {
+    if not cond return
+    write("breakpoint: ")  write(label)  write(" ")  writehexln(val)
+    while not uart::read() {  } 
+}
+
+proc cbrkpt(cond : bool, label : char*) {
+    if not cond return
+    write("breakpoint: ")  writeln(label)
+    while not uart::read() {  } 
+}
+
+proc brkpt(label : char*) {
+    write("breakpoint: ")  writeln(label)
+    while not uart::read() {  } 
+}

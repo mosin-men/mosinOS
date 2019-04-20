@@ -7,9 +7,11 @@ AS=$(CROSS)-as
 GDB=$(CROSS)-gdb
 
 LDSFILE=lds/qemu.lds
+LDS_E31_FILE=lds/q_e31.lds
 ASFLAGS=-march=rv32ima -mabi=ilp32 -O0 -g
-LDFLAGS=-T$(LDSFILE) -march=rv32ima -mabi=ilp32 -O0 -g -nostartfiles -nostdinc -ffreestanding -nostdlib -L.
+LDFLAGS=-march=rv32ima -mabi=ilp32 -O0 -g -nostartfiles -nostdinc -ffreestanding -nostdlib -L.
 OUT=$(NAME).elf
+E31_OUT=$(NAME)_e31.elf
 
 QEMUARGS=-machine sifive_e -nographic -serial mon:stdio -kernel $(OUT)
 
@@ -17,19 +19,30 @@ ASM_SOURCES=$(wildcard asm/*.S)
 ASM_OBJECTS=$(patsubst %.S,%.o,$(ASM_SOURCES))
 
 BJOU_OBJECT=build/$(NAME).o
+BJOU_E31_OBJECT=build/$(NAME)_e31.o
 
 LIBS=-lgcc
 
-all: $(OUT)
+all: q e31
+
+q: $(OUT)
+
+e31: $(E31_OUT)
 
 $(OUT): Makefile $(ASM_OBJECTS) $(BJOU_OBJECT) $(LDSFILE)
-	$(CC) $(LDFLAGS) -o $(OUT) $(ASM_OBJECTS) $(BJOU_OBJECT) $(LIBS)
+	$(CC) -T$(LDSFILE) $(LDFLAGS) -o $(OUT) $(ASM_OBJECTS) $(BJOU_OBJECT) $(LIBS)
+
+$(E31_OUT): Makefile $(ASM_OBJECTS) $(BJOU_E31_OBJECT) $(LDS_E31_FILE)
+	$(CC) -T$(LDS_E31_FILE) $(LDFLAGS) -o $(E31_OUT) $(ASM_OBJECTS) $(BJOU_E31_OBJECT) $(LIBS)
 
 %.o: %.S Makefile
 	$(CC) $(ASFLAGS) -c $< -o $@
 
 $(BJOU_OBJECT):
 	bjou make.bjou
+
+$(BJOU_E31_OBJECT):
+	bjou make_e31.bjou
 
 qemu: $(OUT)
 	$(QEMU) $(QEMUARGS)
@@ -42,4 +55,4 @@ gdb: $(OUT)
 
 clean: 
 	rm -rf build
-	rm -fr $(OUT) $(ASM_OBJECTS)
+	rm -fr $(OUT) $(E31_OUT) $(ASM_OBJECTS)

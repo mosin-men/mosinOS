@@ -7,7 +7,7 @@ using import "build.bjou"
 
     options := BuildOptions.create()
 
-    options.output_name  = "mosin_os.o"
+    options.output_name  = "mosin_os_e31.o"
     # options.output_name  = "mosin_os.ll"
     # options.emitllvm     = true
     options.targettriple = "riscv32-unknown-elf"

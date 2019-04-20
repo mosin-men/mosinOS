@@ -3,6 +3,7 @@
 module trap
 
 using import "console.bjou"
+using import "ansi_escapes.bjou"
 using import "clint.bjou"
 using import "defs.bjou"
 using import "machine_info.bjou"
@@ -11,6 +12,8 @@ using import "sched.bjou"
 using import "PCB.bjou"
 using import "syscall.bjou"
 using import "abort.bjou"
+
+status_bar_counter : u32
 
 const INTERRUPT_MASK := 0x80000000u32
 const ASYNC          := INTERRUPT_MASK
@@ -80,8 +83,16 @@ proc async_handler(code : u32, mepc : u32, mtval : u32) : u32 {
         writeln("STIME")
     } else if code == MTIME      {
         # writeln("MTIME")
-        mepc = sched.update_schedule(mepc)
-        sched::reset_timers()
+        timers := sched::get_timers()
+        mepc    = sched.update_schedule(mepc)
+        sched::reset_timers(timers.0, timers.1)
+
+        if status_bar_counter == sched::QMS_PER_SEC / 10 {
+            draw_status()
+            status_bar_counter = 0
+        } else {
+            status_bar_counter += 1
+        }
     } else if code == UEXT       {
         writeln("UEXT")
     } else if code == SEXT       {
@@ -97,9 +108,9 @@ proc async_handler(code : u32, mepc : u32, mtval : u32) : u32 {
 
 proc sync_handler(code : u32, mepc : u32, mtval : u32) : u32 {
     if code == IADDMISS   {
-        abort("IADDMISS")
+        abort("IADDMISS", mtval)
     } else if code == IACCESS    {
-        abort("IACCESS")
+        abort("IACCESS", mtval)
     } else if code == ILLINST    {
         abort("Instruction access fault!", mtval)
     } else if code == BREAKPT    {
@@ -107,11 +118,11 @@ proc sync_handler(code : u32, mepc : u32, mtval : u32) : u32 {
     } else if code == LDADDMISS  {
         abort("LDADDMISS")
     } else if code == LDACCESS   {
-        abort("LDACCESS")
+        abort("LDACCESS", mtval)
     } else if code == STADDMISS  {
-        abort("STADDMISS")
+        abort("STADDMISS", mtval)
     } else if code == STACCESS   {
-        abort("STACCESS")
+        abort("STACCESS", mtval)
     } else if code == UECALL     {
         writeln("UECALL")
         write("Got syscall number ")
@@ -135,7 +146,7 @@ proc sync_handler(code : u32, mepc : u32, mtval : u32) : u32 {
     } else if code == STPGFAULT  {
         writeln("STPGFAULT")
     } else {
-        writeln("Unknown synchronous trap code")
+        abort("Unknown synchronous trap code")
     }
 
     return mepc
@@ -151,5 +162,29 @@ proc update_mepc(mepc : u32, mode : u32) : u32 {
         return mepc + 4
 
     return mepc + 2
+}
+
+proc draw_status() {
+    write(CURSOR_SAVE)
+    write(CURSOR_HOME)
+    write(CLEAR_LINE)
+    write(RESET)
+    write(UNDERLINE)
+    write("|    ")
+    write(BOLD)
+    write("MosinOS")
+    write(BOLD_OFF) 
+    write("    | current: ")
+
+    if sched.current.is_null()
+        writepad("???", 16)
+    else
+        writepad(sched.current.name, 16)
+
+    write(" | heap used: ")
+    write(__heap_used as i32)  write(" / ")  write(ptr_to_u32(&__heap_size) as i32)
+    write(" |")
+    write(RESET)
+    write(CURSOR_RESTORE)
 }
 

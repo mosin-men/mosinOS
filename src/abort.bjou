@@ -6,14 +6,19 @@ module abort
 
 using import "asm.bjou"
 using import "console.bjou"
+using import "ansi_escapes.bjou"
 
 proc abort(msg : char*) {
-    # write("ABORT: ")  writeln(msg)
+    write(RED)
+    write("ABORT: ")  writeln(msg)
+    write(RESET)
     while true    { asm$wfi() }
 }
 
 proc abort(msg : char*, val : u32) {
-    # write("ABORT: ")
-    # write(msg)  write(" (")  writehex(val)  writeln(")")
+    write(RED)
+    write("ABORT: ")
+    write(msg)  write(" (")  writehex(val)  writeln(")")
+    write(RESET)
     while true    { asm$wfi() }
 }

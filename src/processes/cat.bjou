@@ -10,6 +10,7 @@ type cat {
     const PROC_NAME  := "cat"
 
     proc routine(data : void*, data_len : u32) {
+        write("in cat: ")  writehexln(data)
         inode_nr := @(data as u32*)
         str_input := (data + (sizeof u32)) as char*
 

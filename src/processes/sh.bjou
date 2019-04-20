@@ -74,9 +74,9 @@ type sh {
             else if cstrcmp(prg, "help")     == 0 { print_help()                       }
             else if cstrcmp(prg, "exit")     == 0 { break                              }
             else                                  { write(YELLOW)
-                                                    write("unknown process/command '")
+                                                    write("Unknown process/command '")
                                                     write(prg)
-                                                    write("'")
+                                                    write("'. Try 'help'.")
                                                     write(RESET)
                                                     writeln()                          }
         }
@@ -89,6 +89,7 @@ type sh {
 proc do_cat(wait : bool, data : char*, current_inode : u32) {
     size := cstrlen(data) + sizeof u32 + 1
     cat_buff := syscall::alloc(size)
+    write("do_cat: ")  writehexln(cat_buff)
     @((cat_buff + size - 1) as char*) = 0
     @(cat_buff as u32*) = current_inode
     mcopy(cat_buff + sizeof u32, data, cstrlen(data))
@@ -150,8 +151,8 @@ proc sh_move_cursor(x : u32, y : u32) {
 }
 
 proc cls() {
-    sh_move_cursor(0, 0)
     write(CLEAR_DISPLAY)
+    sh_move_cursor(0, 2)
 }
 
 proc print_help() {

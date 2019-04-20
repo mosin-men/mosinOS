@@ -14,8 +14,9 @@ import "defs.bjou"
 import "uart.bjou"
 using import "cstr.bjou"
 using import "util.bjou"
-using import "error.bjou"
-using import "none.bjou"
+using import "component_result.bjou"
+using none
+using error 
 using import "defs.bjou"
 using import "ansi_escapes.bjou"
 
@@ -23,9 +24,13 @@ const NL_STR := "\r\n"
 
 _con       : console
 
-proc init() : (error | none) {
+proc init() : component_result {
     _con = console.create()
-    return { none: }
+    
+    \static_if{ defs::ANSI_ESC
+        return { none: } }
+    \static_if{ not defs::ANSI_ESC
+        return { warning: .code = 1, .msg = "missing support for ANSI escape codes -- functionality limited" } }
 }
 
 type console {
@@ -45,6 +50,8 @@ type console {
     proc echo_off(this) {
         this.read_fn = uart::read
     }
+
+    proc readchar_nonblocking(this) : char    { return uart::read() }
 
     proc readchar(this) : char {
         c := '\0'
@@ -91,6 +98,10 @@ type console {
             s += 1
         }
     }
+}
+
+proc readchar_nonblocking() : char {
+    return _con.readchar_nonblocking()
 }
 
 proc readchar() : char {

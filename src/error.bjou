@@ -8,3 +8,8 @@ type error {
     code : i32
     msg  : char*
 }
+
+type warning {
+    code : i32
+    msg  : char*
+}

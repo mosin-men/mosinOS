@@ -4,6 +4,7 @@ module process_echo
 
 using import "console.bjou"
 using import "asm.bjou"
+using import "brkpt.bjou"
 
 type echo {
     const STACK_SIZE := 1024

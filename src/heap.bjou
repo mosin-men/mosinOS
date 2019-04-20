@@ -22,14 +22,21 @@ module heap
 
 using import "console.bjou"
 using import "util.bjou"
-using import "error.bjou"
-using import "none.bjou"
+using import "component_result.bjou"
+using import "atomics/locks.bjou"
+using none
+using import "abort.bjou"
 
 const HEAP_NULL := (0x0 as void*) as u32*
+
+# kmalloc_lock : mutex
+# kfree_lock   : mutex
 
 externvar __heap_start : u32
 externvar __heap_end   : u32
 externvar __heap_size  : u32
+
+__heap_used : u32
 
 # Masks to pack a freelist header into 32 bits.
 # The layout looks like:
@@ -54,7 +61,7 @@ const max_block_size := (1u32 bshl 15u32) * 4u32
 # Initialize the heap by simply creating a single free node
 # at the beginning of the heap, which is at __heap_start.
 
-proc init() : (error | none) {
+proc init() : component_result {
     heap_sz := ptr_to_u32(&__heap_size)
     ptr     := &__heap_start # pointer to start of heap
 
@@ -73,6 +80,9 @@ proc init() : (error | none) {
     # writehex(ptr_to_u32(&__heap_size))
     # writeln()
     
+    # kmalloc_lock = mutex.create()
+    # kfree_lock   = mutex.create()
+    
     return { none: }
 }
 
@@ -82,9 +92,11 @@ proc init() : (error | none) {
 # 2. A NULL pointer, if the heap has no room.
 
 proc kmalloc(size : u32) : void* {
+    # while not kmalloc_lock.acquire() {  }
     # Check the size to make sure it's not too big or zero
     if size == 0
     or size > max_block_size {
+        # kmalloc_lock.release()
         return HEAP_NULL
     }
 
@@ -94,6 +106,7 @@ proc kmalloc(size : u32) : void* {
     if rem != 0 {
         size += (4 - rem)
     }
+    real_size := size
     size = size bshr 2
 
     # Pointer to the start of our heap.
@@ -109,6 +122,7 @@ proc kmalloc(size : u32) : void* {
         addr := start + offset
         if addr >= end {
             # We've hit the end of the heap
+            # kmalloc_lock.release()
             return HEAP_NULL
         }
 
@@ -136,6 +150,7 @@ proc kmalloc(size : u32) : void* {
     # If there will only be 4 bytes left, just give it away
     if blocksize == (size + 1) {
         size += 1
+        real_size += 4
     }
 
     if blocksize > size {
@@ -158,6 +173,10 @@ proc kmalloc(size : u32) : void* {
     start[offset] = node
 
     # Return the pointer to the allocation
+    # kmalloc_lock.release()
+  
+    __heap_used += real_size
+
     return start + offset + 1
 }
 
@@ -182,6 +201,8 @@ proc heap_print(max_offset : u32) {
 
 # Frees the pointer that you give it
 proc kfree(arg_ptr : void*) {
+    # while not kfree_lock.acquire() {  }
+
     ptr   := arg_ptr as u32*
     start := &__heap_start
     end   := &__heap_end
@@ -189,20 +210,28 @@ proc kfree(arg_ptr : void*) {
     # Sanity checks
     if ptr <  start
     or ptr >= end {
-        write("kfree: Pointer was invalid: ")
-        writehexln(ptr_to_u32(ptr))
+        abort("kfree: Pointer was invalid: ", ptr_to_u32(ptr))
+        return
     }
 
     # Grab the node in the freelist that's going to be freed.
     # Go ahead and free it by unsetting the "taken" bit.
     ptr  -= 1
     node := @ptr
+
+    taken := node and taken_mask
+    if not taken {
+        abort("kfree: double free for address: ", ptr_to_u32(ptr))
+    }
+
     node  = node band bneg taken_mask
     @ptr  = node
 
     # Save the information in the node
     size     := node band cur_size_mask
     prevsize := (node band prev_size_mask) bshr 16
+
+    __heap_used -= size bshl 2
 
     # Look down to see if we need to merge the block below
     offset := size + 1
@@ -231,9 +260,10 @@ proc kfree(arg_ptr : void*) {
         if not (prevnode band taken_mask) {
             # If the previous node isn't taken, merge.
             prevnode = prevnode band bneg cur_size_mask
-            prevnode =     prevnode
-                       bor ((prevsize + size + 1) band cur_size_mask)
+            prevnode = prevnode bor ((prevsize + size + 1) band cur_size_mask)
             ptr[0 - offset] = prevnode
         }
     }
+
+    # kfree_lock.release()
 }

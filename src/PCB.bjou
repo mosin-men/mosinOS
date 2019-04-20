@@ -13,7 +13,7 @@ type PCB {
     QM            : u8
     pid           : u16
     stack_size    : u16
-    stack_pointer : u32
+    stack_pointer : void*
     name          : char*
     kill          : bool
     waitpid       : i16

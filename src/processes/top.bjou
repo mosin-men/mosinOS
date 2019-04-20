@@ -7,45 +7,108 @@ using import "cstr.bjou"
 using import "util.bjou"
 using import "sched.bjou"
 using import "PCB.bjou"
+using import "defs.bjou"
+
+const TOP_DELAY := 1000
 
 type top {
-    const STACK_SIZE := 512
+    const STACK_SIZE := 1024
     const QM         := 1
     const PROC_NAME  := "top"
 
     proc routine(data : void*, data_len : u32) {
-        array := NULL as process_info*
-        n     := syscall::procs(&array)
-        ptr   := array
-
-        if data_len >= 2 {
-            pid := atoi(data as char*) 
-            found := false
-            for i := 0; i < n; i += 1 {
-                if array[i].pid == pid {
-                    print_header()
-                    print_proc_info(array[i].pid, array[i].vruntime, array[i].name, array[i].waitpid, array[i].sleep)
-                    found = true
-                    break
-                }
-            }
-            if not found    { write("top: pid ")  write(pid)  writeln(" not found.") }
-        } else {
-            print_header()
-            for i := 0; i < n; i += 1
-                print_proc_info(array[i].pid, array[i].vruntime, array[i].name, array[i].waitpid, array[i].sleep)
-        }
-
-        if not array.is_null()
-            syscall::free(array)
+        write(CURSOR_HIDE)
+        if data_len >= 2     { do_one(data) }
+        else                 { do_all(data) }
+        write(CURSOR_SHOW)
     }
 }
 
-proc print_header() {
-    writeln("PID    STATUS     VRUNTIME(QM)    TIME(s)    CMD")
+proc do_one(data : void*) {
+    array := NULL as process_info*
+    c : char
+
+    n     := syscall::procs(&array)
+    ptr   := array
+    pid   := atoi(data as char*) 
+    found := false
+
+    for i := 0; i < n; i += 1 {
+        if array[i].pid == pid {
+            found = true
+            break
+        }
+    }
+
+    if not array.is_null()    { syscall::free(array) }
+
+    if not found {
+        write("top: pid ")  write(pid)  writeln(" not found.")
+        return
+    }
+
+    array = NULL as process_info*
+
+    while not (c = readchar_nonblocking())
+    or    c != 'q' {
+        \static_if{ ANSI_ESC    write("\e[2;0H") }
+        write(CLEAR_DISPLAY)
+
+        n = syscall::procs(&array)
+
+        print_header()
+        for i := 0; i < n; i += 1 {
+            if array[i].pid == pid {
+                print_proc_info(array[i].pid, array[i].vruntime, array[i].QM, array[i].name, array[i].waitpid, array[i].sleep)
+                break
+            }
+        }
+            
+        if not array.is_null() {
+            syscall::free(array)
+            array = NULL as process_info*
+        }
+
+        syscall::sleep(TOP_DELAY)
+    }
+
+    if not array.is_null()    { syscall::free(array) }
 }
 
-proc print_proc_info(pid : i32, vruntime : u32, name : char*, waitpid : i16, sleep : i16) {
+proc do_all(data : void*) {
+    array := NULL as process_info*
+    c : char
+
+    while not (c = readchar_nonblocking())
+    or    c != 'q' {
+        \static_if{ ANSI_ESC    write("\e[2;0H") }
+        write(CLEAR_DISPLAY)
+
+        n := syscall::procs(&array)
+
+        print_header()
+        for i := 0; i < n; i += 1 {
+            print_proc_info(array[i].pid, array[i].vruntime, array[i].QM, array[i].name, array[i].waitpid, array[i].sleep)
+        }
+            
+        if not array.is_null() {
+            syscall::free(array)
+            array = NULL as process_info*
+        }
+
+        syscall::sleep(TOP_DELAY)
+    }
+
+    if not array.is_null()    { syscall::free(array) }
+}
+
+proc print_header() {
+    write(INVERT)
+    writeln("  PID    STATUS     VRUNTIME(QM)    CPU TIME(s)    CMD                 ")
+    write(RESET)
+}
+
+proc print_proc_info(pid : i32, vruntime : u32, QM : u32, name : char*, waitpid : i16, sleep : i16) {
     status_strs := { "running", "waiting", "sleeping" }
 
     status := 0
@@ -55,18 +118,22 @@ proc print_proc_info(pid : i32, vruntime : u32, name : char*, waitpid : i16, sle
         status = 2
     
 
+    write(INVERT)  write(" ")
+    write(RESET)   write(" ")
     buff : char[32]
     itoa(pid, buff)
     writepad(buff, 3)  write("    ")
     writepad(status_strs[status], 8)  write("   ")
     itoa(vruntime, buff)
     writepad(buff, 12)  write("    ")
-    itoa(vruntime / sched::QMS_PER_SEC, buff)
+
+    seconds := (vruntime / sched::QMS_PER_SEC) / QM
+    itoa(seconds, buff)
 
     if pid == syscall::mypid() {
-        writepad(buff, 7)  write("   *")
+        writepad(buff, 11)  write("   *")
     } else {
-        writepad(buff, 7)  write("    ")
+        writepad(buff, 11)  write("    ")
     }
     writeln(name)
 }

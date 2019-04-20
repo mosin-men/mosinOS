@@ -7,11 +7,12 @@
 
 import "compiler_support.bjou"
 import "__slice.bjou"
-using import "none.bjou"
-using import "error.bjou"
 import "defs.bjou"
 import "trap.bjou"
 import "uart.bjou"
+using import "component_result.bjou"
+using error
+using none
 using import "console.bjou"
 using import "ansi_escapes.bjou"
 using import "asm.bjou"
@@ -32,7 +33,7 @@ proc __no_mangle__ main() {
     if  start_component("uart",    uart   ::init)
     and start_component("console", console::init)
     and start_component("heap",    heap   ::init)
-    # and start_component("fs/ext2", ext2   ::init)
+    and start_component("fs/ext2", ext2   ::init)
     and start_component("sched",   sched  ::init)
     and start_component("init",        init_init) {
         # Turn on timer interrupts.
@@ -46,7 +47,7 @@ proc __no_mangle__ main() {
     abort("Boot failure.")
 }
 
-proc init_init() : (error | none) {
+proc init_init() : component_result {
     pid := sched.new_process(
             process_init::init.STACK_SIZE,
             (routine_exit_wrapper$process_init::init as void*) as u32,
@@ -62,7 +63,7 @@ proc init_init() : (error | none) {
     return { none: }
 }
 
-proc start_component(comp_name : char*, ini : <() : (error | none)>) : bool {
+proc start_component(comp_name : char*, ini : <() : component_result>) : bool {
     status := ini()
     init_message(comp_name, status)
 
@@ -70,12 +71,15 @@ proc start_component(comp_name : char*, ini : <() : (error | none)>) : bool {
     return true
 }
 
-proc init_message(comp_name : char*, status : (error | none)) {
+proc init_message(comp_name : char*, status : component_result) {
     write("[ ") writepad(comp_name, 7)  write(" ] ")
 
     if err : error = status {
         write(RED)
         write("ERROR (")  write(err.code)  write(") ")  writeln(err.msg)
+    } else if warn : warning = status {
+        write(YELLOW)
+        write("WARNING (")  write(warn.code)  write(") ")  writeln(warn.msg)
     } else {
         write(GREEN)
         writeln("Ok.")

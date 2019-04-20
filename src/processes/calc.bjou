@@ -27,6 +27,8 @@ type calc {
             else { writeln("usage: OP VAL")
                    writeln("'q' to quit")           }
         }
+
+        syscall::free(buff)
     }
 }
 
