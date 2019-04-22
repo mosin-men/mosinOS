@@ -36,7 +36,7 @@ type process_info {
     QM       : u32
     name     : char*
     waitpid  : i16
-    sleep    : i16
+    sleep    : u32
 }
 
 proc msyscall(code : u32) {

@@ -72,8 +72,8 @@ type game {
 
         write(RESET)
 
-        game_move_cursor(0, 2)
         write(CLEAR_DISPLAY)
+        game_move_cursor(0, 2)
 
         echo_on()
     }

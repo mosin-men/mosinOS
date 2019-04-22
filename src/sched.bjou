@@ -116,17 +116,17 @@ type scheduler {
                     kfree(pcb.stack_pointer)
                     kfree(pcb)
                 }
-            } else { abort("scheduler did not find a viable process") }
+            } else {
+                abort("scheduler did not find a viable process")
+            }
         }
 
         for i := 0; i < n_waiting; i += 1 {
             this.add_to_tree(waiting[i].vruntime, waiting[i])
         }
         for ptr := all_pcbs; not (@ptr).is_null(); ptr += 1 {
-            (@ptr).sleep -= 1
-            # if (@ptr).sleep >= 0 {
-            #     write((@ptr).name)  write("  ")  writeln((@ptr).sleep as i32)
-            # }
+            if (@ptr).sleep > 0
+                (@ptr).sleep -= 1
         }
 
         mcopy(GLOBAL_CTX, this.current.context, (sizeof u32) * 32)        

@@ -47,6 +47,9 @@ $(BJOU_E31_OBJECT):
 qemu: $(OUT)
 	$(QEMU) $(QEMUARGS)
 
+qdb: $(OUT)
+	$(QEMU) $(QEMUARGS) -S -s&
+
 gdb: $(OUT)
 	#$(QEMU) $(QEMUARGS) -S -s &
 	$(GDB) $(OUT) -ex "target remote localhost:1234"

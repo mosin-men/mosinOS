@@ -118,7 +118,7 @@ proc sync_handler(code : u32, mepc : u32, mtval : u32) : u32 {
     } else if code == BREAKPT    {
         writeln("BREAKPT")
     } else if code == LDADDMISS  {
-        abort("LDADDMISS")
+        abort("LDADDMISS", mtval)
     } else if code == LDACCESS   {
         abort("LDACCESS", mtval)
     } else if code == STADDMISS  {

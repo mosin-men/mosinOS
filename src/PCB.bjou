@@ -17,5 +17,5 @@ type PCB {
     name          : char*
     kill          : bool
     waitpid       : i16
-    sleep         : i16
+    sleep         : u32
 }

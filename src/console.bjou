@@ -62,15 +62,20 @@ type console {
     proc readln(this, dst : char*) {
         ptr := dst
 
+        save_rd_fn := this.read_fn
+        this.echo_off()
+
         c := '\0'
         while true {
             while not (c = this.read_fn()) {}
-            
+           
             if c == '\r' {
                 @dst = '\n'
                 dst += 1
+                write('\r')
+                write('\n')
                 break
-            } else if c == 127 {
+            } else if c == 127 or c == 8 {
                 if dst != ptr {
                     dst -= 1
                     @dst = '\0'
@@ -80,9 +85,12 @@ type console {
             } else {
                 @dst = c
                 dst += 1
+                write(c)
             }
         }
         @dst = '\0'
+
+        this.read_fn = save_rd_fn
     }
 
     proc write(this, c : char) {
