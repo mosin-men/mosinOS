@@ -23,6 +23,7 @@ using import "processes/fsinfo.bjou"
 using import "processes/ls.bjou"
 using import "processes/cd.bjou"
 using import "processes/cat.bjou"
+using import "processes/status.bjou"
 
 proc routine_exit_wrapper$T(data : void*, data_len : u32) {
     T.routine(data, data_len)

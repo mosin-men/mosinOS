@@ -16,7 +16,7 @@ using import "build.bjou"
     options.noabc        = true
     options.c            = true
     options.opt          = true
-    options.time         = true
+    # options.time         = true
 
     options.module_search_paths.push("src")
 

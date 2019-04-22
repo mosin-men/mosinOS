@@ -24,6 +24,7 @@ using import "processes/fsinfo.bjou"
 using import "processes/ls.bjou"
 using import "processes/cd.bjou"
 using import "processes/cat.bjou"
+using import "processes/status.bjou"
 
 type sh {
     const STACK_SIZE := 1024
@@ -70,6 +71,7 @@ type sh {
             else if cstrcmp(prg, "ls")       == 0 { do_ls(wait, arg_data, current_inode) }
             else if cstrcmp(prg, "cd")       == 0 { do_cd(wait, arg_data, current_inode) }
             else if cstrcmp(prg, "cat")      == 0 { do_cat(wait, arg_data, current_inode)}
+            else if cstrcmp(prg, "status")   == 0 { exec $ status(wait, arg_data)      }
             else if cstrcmp(prg, "clear")    == 0 { cls()                              }
             else if cstrcmp(prg, "help")     == 0 { print_help()                       }
             else if cstrcmp(prg, "exit")     == 0 { break                              }
@@ -89,7 +91,6 @@ type sh {
 proc do_cat(wait : bool, data : char*, current_inode : u32) {
     size := cstrlen(data) + sizeof u32 + 1
     cat_buff := syscall::alloc(size)
-    write("do_cat: ")  writehexln(cat_buff)
     @((cat_buff + size - 1) as char*) = 0
     @(cat_buff as u32*) = current_inode
     mcopy(cat_buff + sizeof u32, data, cstrlen(data))
@@ -173,6 +174,7 @@ proc print_help() {
     ls                list files in the current directory
     cd [PATH]         change the current directory
     cat FILE          output file contents
+    status            toggle OS status bar
    
 Available commands are:
     exit              leave the shell

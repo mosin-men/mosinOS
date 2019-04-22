@@ -80,11 +80,17 @@ type game {
 }
 
 proc game_move_cursor(x : i32, y : i32) {
-    write("\e[")
-    write(y)
-    write(';')
-    write(x)
-    write('H')
+    buff1 : char[32]
+    buff2 : char[8]
+    buff1[0] = 0
+    cstrcat(buff1, "\e[")
+    itoa(y, buff2)
+    cstrcat(buff1, buff2)
+    cstrcat(buff1, ";")
+    itoa(x, buff2)
+    cstrcat(buff1, buff2)
+    cstrcat(buff1, "H")
+    write(buff1)
 }
 
 proc draw_score(score : i32) {

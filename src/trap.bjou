@@ -14,6 +14,7 @@ using import "syscall.bjou"
 using import "abort.bjou"
 
 status_bar_counter : u32
+status_bar_enable  : u32 # 0 = off, 1 = drawn, but should be cleared and set to off, 2 = on
 
 const INTERRUPT_MASK := 0x80000000u32
 const ASYNC          := INTERRUPT_MASK
@@ -88,7 +89,8 @@ proc async_handler(code : u32, mepc : u32, mtval : u32) : u32 {
         sched::reset_timers(timers.0, timers.1)
 
         if status_bar_counter == sched::QMS_PER_SEC / 10 {
-            draw_status()
+            if status_bar_enable
+                draw_status()
             status_bar_counter = 0
         } else {
             status_bar_counter += 1
@@ -168,6 +170,14 @@ proc draw_status() {
     write(CURSOR_SAVE)
     write(CURSOR_HOME)
     write(CLEAR_LINE)
+
+    if status_bar_enable == 1 {
+        write(RESET)
+        write(CURSOR_RESTORE)
+        status_bar_enable = 0
+        return
+    }
+
     write(RESET)
     write(UNDERLINE)
     write("|    ")

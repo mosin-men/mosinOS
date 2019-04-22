@@ -8,11 +8,15 @@ using import "asm.bjou"
 using import "console.bjou"
 using import "ansi_escapes.bjou"
 
+proc __no_mangle__ _abort_loop() {
+    while true    { asm$wfi() }
+}
+
 proc abort(msg : char*) {
     write(RED)
     write("ABORT: ")  writeln(msg)
     write(RESET)
-    while true    { asm$wfi() }
+    _abort_loop()
 }
 
 proc abort(msg : char*, val : u32) {
@@ -20,5 +24,5 @@ proc abort(msg : char*, val : u32) {
     write("ABORT: ")
     write(msg)  write(" (")  writehex(val)  writeln(")")
     write(RESET)
-    while true    { asm$wfi() }
+    _abort_loop()
 }

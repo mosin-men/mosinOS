@@ -1,0 +1,15 @@
+# status.bjou
+
+module process_status
+
+using import "syscall.bjou"
+
+type status {
+    const STACK_SIZE := 256
+    const QM         := 1
+    const PROC_NAME  := "status"
+
+    proc routine(data : void*, data_len : u32) {
+        syscall::togglestatus()
+    }
+}

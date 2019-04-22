@@ -14,6 +14,8 @@ using import "rbtree.bjou"
 using import "util.bjou"
 using import "mem.bjou"
 using import "abort.bjou"
+using import "defs.bjou"
+using import "machine_info.bjou"
 
 using import "console.bjou"
 
@@ -288,10 +290,12 @@ proc reset_timers(prev_mlo : u32, prev_mhi : u32) {
     # write("FREQ:            ")  writeln(FREQ as i32)
     # write("QMS_PER_SEC      ")  writeln(QMS_PER_SEC)
 
-    interval := (FREQ / 100) / QMS_PER_SEC
+    interval := FREQ / QMS_PER_SEC
 
-    # write("interval:        ")  writeln(interval)
-
+    weird_frequency_modifier_because_the_hardware_is_wack := 100
+    if TARGET == E31
+        interval /= weird_frequency_modifier_because_the_hardware_is_wack
+        
     mtime64        := ((prev_mhi as u64) bshl 32) + (prev_mlo as u64)
     mtimecmp64     := mtime64 + interval
     new_mtimecmphi := (mtimecmp64 bshr 32) as u32

@@ -25,6 +25,7 @@ const NPROC   := 9u32
 const PROCS   := 10u32
 const SLEEP   := 11u32
 const MYPID   := 12u32
+const TGL_STS := 13u32
 
 const UMODE   := 0u32
 const MMODE   := 3u32
@@ -71,6 +72,7 @@ proc nproc() : u32 { return syscall(NPROC, 0, 0, 0, 0, 0, 0) }
 proc procs(ptr : process_info**) : u32 { return syscall(PROCS, ptr_to_u32(ptr), 0, 0, 0, 0, 0) }
 proc sleep(msecs : u32) { syscall(SLEEP, msecs, 0, 0, 0, 0, 0) }
 proc mypid() : i16 { return syscall(MYPID, 0, 0, 0, 0, 0, 0) as i16 }
+proc togglestatus() : u32 { return syscall(TGL_STS, 0, 0, 0, 0, 0, 0) }
 
 proc handle_syscall(code : u32, arg0 : u32, arg1 : u32, arg2 : u32, arg3 : u32, arg4 : u32, arg5 : u32) : u32 {
     result := 0u32
@@ -95,6 +97,10 @@ proc handle_syscall(code : u32, arg0 : u32, arg1 : u32, arg2 : u32, arg3 : u32, 
         result = handle_sleep(arg0)
     } else if code == MYPID {
         result = handle_mypid()
+    } else if code == TGL_STS {
+        result = handle_togglestatus()
+    } else {
+        abort("unhandled syscall", code)
     }
 
     return result
@@ -191,4 +197,13 @@ proc handle_mypid() : u32 {
     if sched.current.is_null()
         return -1
     return sched.current.pid
+}
+proc handle_togglestatus() : u32 {
+    using trap
+    if not status_bar_enable {
+        status_bar_enable = 2
+    } else {
+        status_bar_enable = 1
+    }
+    return status_bar_enable
 }
